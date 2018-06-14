@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import harmonic_functions
 import time
+import warnings
 import datetime
 from tqdm import tqdm
 import pause
@@ -22,6 +23,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from datetime import timedelta
 import os.path
+
+warnings.filterwarnings("ignore",category =RuntimeWarning)
 
 openhour = 1
 closehour = 10
@@ -519,6 +522,6 @@ class PatternBot(object):
 
 if False:
 
-    data = backtestData(n_split=500,frame='ytd')
+    data = backtestData(n_split=500,frame='5year')
     bot = PatternBot(data=data,instrument=pairs)
-    bot.backtest(data,[30.0,15,5.0])
+    bot.backtest(data,[50.0,10,5.0])
