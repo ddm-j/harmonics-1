@@ -56,7 +56,8 @@ class optimizer(object):
         percent = 100*float(len(self.results))/float(len(self.grid))
 
         elapsed = now - self.start
-        remaining = elapsed*(1/(percent/100.0))
+        total = elapsed*(1/(percent/100.0))
+        remaining = total - elapsed
 
         if round(percent)%5==0:
             self.results.to_csv('OptimizationResults-'+self.frame+'.csv')
@@ -91,7 +92,7 @@ class optimizer(object):
 
 if __name__ == '__main__':
 
-    multiprocessing.freeze_support()
+    #multiprocessing.freeze_support()
 
     opt = optimizer(n_proc=4,frame='5year')
     opt.prep()
