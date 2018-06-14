@@ -44,27 +44,27 @@ class optimizer(object):
 
     def ret_func(self,retval):
 
+
         self.results = self.results.append({'stop':retval[0],'peak':retval[1],'error':retval[2],'sharpe':retval[3],
                                             'apr':retval[4],'acc':retval[5],'exp':retval[6]},ignore_index=True)
-
         percent = 100*float(len(self.results))/float(len(self.grid))
 
         print(round(percent,2),'% - [Sharp, APR, ACC, EXP] = [',round(self.results.sharpe.max(),2),
-              round(self.results.apr.max(),2),round(self.results.acc.max(),2),round(self.results.exp.max(),2))
+              round(self.results.apr.max(),2),round(self.results.acc.max(),2),round(self.results.exp.max(),2),']')
 
 
     def search(self):
 
+
         p = multiprocessing.Pool(processes=self.n_proc)
 
         for x, y in zip(repeat(self.data),self.grid):
-
             p.apply_async(self.bot.backtest,(x,y),callback=self.ret_func)
 
         p.close()
         p.join()
 
-        self.results.to_cst('OptimizationResults.csv')
+        self.results.to_csv('OptimizationResults.csv')
 
         print('***************************')
         print('Exiting, Optimization Complete')
