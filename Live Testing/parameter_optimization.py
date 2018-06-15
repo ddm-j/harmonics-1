@@ -1,21 +1,4 @@
-
-import logging
-import pandas as pd
-import numpy as np
-import harmonic_functions
-import time
-import datetime
-from tqdm import tqdm
 from itertools import repeat
-
-import pause
-from harmonic_functions import *
-import multiprocessing
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-from datetime import timedelta
-import os.path
-import random
 from sklearn.model_selection import ParameterGrid
 from botProto1 import *
 import warnings
@@ -48,6 +31,8 @@ class optimizer(object):
 
 
     def ret_func(self,retval):
+
+        retval = retval[1]
 
         now = time.time()
         self.results = self.results.append({'stop':retval[0],'peak':retval[1],'error':retval[2],'sharpe':retval[3],
@@ -94,7 +79,7 @@ if __name__ == '__main__':
 
     #multiprocessing.freeze_support()
 
-    opt = optimizer(n_proc=4,frame='5year')
+    opt = optimizer(n_proc=4,frame='ytd')
     opt.prep()
     print('Data Prepped, beginning search')
     opt.search()

@@ -78,23 +78,6 @@ class backtestData(object):
         self.historical_hour = hist_data_hour
         self.historical_all = hist_data_all
 
-       # for i in pairs:
-
-           # tmp = pd.read_csv('1min/' + i + '.csv')
-           # tmp.columns = ['Date', 'open', 'high', 'low', 'close','volume']
-
-           # tmp.Date = pd.to_datetime(tmp.Date, format='%d.%m.%Y %H:%M:%S.%f')
-
-            #tmp = tmp.set_index(tmp.Date)
-
-           # tmp = tmp[['open', 'high', 'low', 'close']]
-
-          #  tmp = tmp.drop_duplicates(keep=False)
-
-         #   hist_data_min.update({i:tmp})
-
-        #self.historical_min = hist_data_min
-
         self.data_runner = self.historical_hour.iloc[:n_split]
         self.data_feed = self.historical_hour.iloc[n_split:]
 
@@ -149,7 +132,7 @@ class PatternBot(object):
 
         # Begin Backtesting Loop
 
-        for i in tqdm(range(0,len(data_object.data_feed))):
+        for i in range(0,len(data_object.data_feed)):
 
             # Get New Data and append to historical feed
 
@@ -187,7 +170,6 @@ class PatternBot(object):
 
                     exit_dates.append(exit_time)
                     pair_list.append(pair)
-
 
                     pnl = np.append(pnl,pips)
 
@@ -240,22 +222,21 @@ class PatternBot(object):
 
             equity = np.append(equity, equity[i] + profit)
 
-        #plt.plot(equity)
-        #plt.show()
-
-        trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
+        self.trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
                                    'pnl':pnl,'equity':equity[1:]})
 
         start_seconds = data_object.data_feed['EUR_USD'].index[0].toordinal()
         end_seconds = data_object.data_feed['EUR_USD'].index[-1].toordinal()
 
-        performance = self.get_performance(trade_info,[start_seconds,end_seconds,patt_cnt,corr_pats])
+        self.performance = self.get_performance(self.trade_info,[start_seconds,end_seconds,patt_cnt,corr_pats])
 
-        patt_info = [patt_cnt,corr_pats,pair_pos,pair_neg]
+        self.patt_info = [patt_cnt,corr_pats,pair_pos,pair_neg]
 
-        self.gen_plot(trade_info,performance,patt_info)
+        ext_perf = self.performance
 
-        return trade_info,performance
+        ext_perf[0:0] = [stop_loss,peak_param,pattern_err]
+
+        return self.trade_info,ext_perf
 
     def get_performance(self,trade_info,extra):
 
@@ -308,7 +289,7 @@ class PatternBot(object):
         counts = [patt_cnt,corr_pats]
 
 
-        return [sharpe,apr,acc,expectancy,mdd,]
+        return [sharpe,apr,acc,expectancy,mdd]
 
     def gen_plot(self,trade_info,performance,patt_info):
 
@@ -722,6 +703,7 @@ class PatternBot(object):
 
 if __name__ == '__main__':
 
-    data = backtestData(n_split=500,frame='1year')
+    data = backtestData(n_split=500,frame='ytd')
     bot = PatternBot(data=data,instrument=pairs)
     bot.backtest(data,[20.0,5,15.0])
+    bot.gen_plot(bot.trade_info,bot.performance,bot.patt_info)
