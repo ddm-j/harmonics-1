@@ -13,6 +13,9 @@ import numpy as np
 import harmonic_functions
 import time
 import warnings
+import plotly as py
+from plotly import tools
+import plotly.graph_objs as go
 import datetime
 from tqdm import tqdm
 import pause
@@ -128,7 +131,13 @@ class PatternBot(object):
 
         Plot = False
 
+        pair_pos = pd.DataFrame(dict((key,[0]) for key in self.pairs))
+        pair_neg = pd.DataFrame(dict((key, [0]) for key in self.pairs))
         pnl = []
+        pair_list = []
+        entry_dates = []
+        exit_dates = []
+        sizes = []
         patt_cnt = 0
         corr_pats = 0
 
@@ -136,9 +145,11 @@ class PatternBot(object):
 
         self.hist_data = data_object.data_runner
 
+        last_patt_start = 0
+
         # Begin Backtesting Loop
 
-        for i in range(0,len(data_object.data_feed)):
+        for i in tqdm(range(0,len(data_object.data_feed))):
 
             # Get New Data and append to historical feed
 
@@ -156,26 +167,38 @@ class PatternBot(object):
                 pair = j
                 patterns = results_dict[j]
 
-                if patterns != None:
+                if patterns != None and patterns[-1][0] != last_patt_start:
+
+                    last_patt_start = patterns[-1][0]
 
                     patt_cnt += 1
 
                     # Get Trade Placement Time
 
                     trade_time = data_object.data_feed.iloc[i].name
+                    entry_dates.append(trade_time)
 
                     walk_data = data_object.historical_hour[pair][trade_time:]
 
                     # Walk Forward Through Data
 
                     sign = -1 if patterns[1] == 'Bearish' else 1
-                    pips = self.walk(walk_data,sign,stop=stop_loss)
+                    pips,exit_time = self.walk(walk_data,sign,stop=stop_loss)
+
+                    exit_dates.append(exit_time)
+                    pair_list.append(pair)
+
 
                     pnl = np.append(pnl,pips)
 
                     if pips > 0:
 
                         corr_pats += 1
+                        pair_pos[pair][0] += 1
+
+                    else:
+
+                        pair_neg[pair][0] += 1
 
                     if Plot == True:
 
@@ -207,6 +230,8 @@ class PatternBot(object):
 
             position = posSizeBT(equity[i], risk, 20)
 
+            sizes.append(position)
+
             revenue = position * pnl[i]
 
             comission = revenue * (25 / 1000000)
@@ -218,9 +243,33 @@ class PatternBot(object):
         #plt.plot(equity)
         #plt.show()
 
+        trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
+                                   'pnl':pnl,'equity':equity[1:]})
+
+        start_seconds = data_object.data_feed['EUR_USD'].index[0].toordinal()
+        end_seconds = data_object.data_feed['EUR_USD'].index[-1].toordinal()
+
+        performance = self.get_performance(trade_info,[start_seconds,end_seconds,patt_cnt,corr_pats])
+
+        patt_info = [patt_cnt,corr_pats,pair_pos,pair_neg]
+
+        self.gen_plot(trade_info,performance,patt_info)
+
+        return trade_info,performance
+
+    def get_performance(self,trade_info,extra):
+
+        equity = trade_info.equity.values
+        pnl = trade_info.pnl.values
+        start_seconds = extra[0]
+        end_seconds = extra[1]
+        patt_cnt = extra[2]
+        corr_pats = extra[3]
+
         # Percentage returns
 
         returns = (equity[1:] - equity[:-1]) / equity[:-1]
+        returns_df = pd.Series(returns,index=trade_info.entry[1:].values)
 
         cumreturns = (returns + 1).cumprod() - 1
 
@@ -230,32 +279,186 @@ class PatternBot(object):
 
         # APR
 
-        start_seconds = data_object.data_feed['EUR_USD'].index[0].toordinal()
-        end_seconds = data_object.data_feed['EUR_USD'].index[-1].toordinal()
-
         t_elapsed = float(end_seconds - start_seconds)
 
         apr = 100 * (np.exp((float(252) * np.log(equity[-1] / equity[0])) / t_elapsed) - 1)
 
         # Prediction Accuracy
 
-        acc = 100*float(corr_pats) / float(patt_cnt)
+        acc = 100 * float(corr_pats) / float(patt_cnt)
 
         # Expectancy
 
         pos_pnl = pnl[np.where(pnl > 0)[0]]
         neg_pnl = abs(pnl[np.where(pnl < 0)[0]])
 
-        expectancy = 10000*((float(len(pos_pnl)) / float(len(pnl))) * np.mean(pos_pnl) - (
-                    float(len(neg_pnl)) / float(len(pnl))) * np.mean(neg_pnl))
+        expectancy = 10000 * ((float(len(pos_pnl)) / float(len(pnl))) * np.mean(pos_pnl) - (
+                float(len(neg_pnl)) / float(len(pnl))) * np.mean(neg_pnl))
 
-        return [stop_loss,peak_param,pattern_err,sharpe,apr,acc,expectancy]
+        # Maximum Drawdown
+
+        mdd, start_mdd, end_mdd = self.max_dd(returns_df)
+
+        ddd = end_mdd-start_mdd
+
+        mdd = [mdd,ddd,start_mdd,end_mdd]
+
+        # Pattern Counts
+
+        counts = [patt_cnt,corr_pats]
+
+
+        return [sharpe,apr,acc,expectancy,mdd,]
+
+    def gen_plot(self,trade_info,performance,patt_info):
+
+        # Extract Trade Data
+
+        trade_info = trade_info.set_index('entry',drop=False)
+        trade_dates = trade_info.entry
+        equity = trade_info.equity
+        durations = trade_info.exit - trade_info.entry
+        time_difference = trade_dates[1:] - trade_dates[:-1]
+        average_freq = sum(time_difference, timedelta())/len(time_difference)
+
+        # Extract Performance Data
+
+        sharpe = performance[0]
+        apr = performance[1]
+        acc = performance[2]
+        exp = performance[3]
+        mdd,ddd,start_mdd,end_mdd = performance[4]
+
+        # Extract Pairwise Data
+
+        total = patt_info[0]
+        correct = patt_info[1]
+        pair_pos = np.array([float(i) for i in patt_info[2].values[0]])
+        pair_neg = np.array([float(i) for i in patt_info[3].values[0]])
+        pair_acc = 100*pair_pos/(pair_pos+pair_neg)
+
+
+        pnl_grouped = trade_info.groupby('instrument')['pnl'].apply(list)
+        pnl_grouped = [pnl_grouped[pair] for pair in self.pairs]
+
+        pnl_pos = [[x for x in pnl_grouped[i] if x > 0] for i in range(0,len(pnl_grouped))]
+        pnl_neg = [[abs(x) for x in pnl_grouped[i] if x < 0] for i in range(0,len(pnl_grouped))]
+
+        pnl_mean_pos = [np.mean(x) for x in pnl_pos]
+        pnl_mean_neg = [np.mean(x) for x in pnl_neg]
+
+        pair_exp = [10000*((pair_acc[i]/100)*pnl_mean_pos[i] - (1-pair_acc[i]/100.0)*pnl_mean_neg[i]) for i in range(0,len(pnl_mean_pos))]
+        pair_exp = [str(round(i,2)) for i in pair_exp]
+
+        pair_acc = [str(round(i)) for i in pair_acc]
+
+        title = 'Multi-Pair Harmonic Pattern Backtest<br>Pairs: '+', '.join(self.pairs)+'<br>'+str(trade_info.entry[0])+' through '+\
+                str(trade_info.entry[-1])
+
+        # Plotting
+
+        text_labels = zip(trade_info.instrument,[str(i) for i in trade_dates],[str(i) for i in trade_info.exit],
+                          [str(round(i)) for i in trade_info.pos_size],[str(i) for i in durations])
+
+        text_labels = ['Instrument: '+l[0]+'<br>Entry: '+l[1]+'<br>Exit: '+l[2]
+                       +'<br>Position Size: '+l[3]+'<br>Trade Duration: '+l[4] for l in text_labels]
+
+        pair_labels = ['<br>'+i[0]+': '+i[1]+'%, '+i[2]+' pips' for i in zip(self.pairs,pair_acc,pair_exp)]
+        pair_labels = ''.join(pair_labels)
+
+
+        trace0 = go.Scatter(x=trade_dates, y=equity,
+                            text=text_labels,
+                            hoverinfo='text',
+                            mode = 'lines+markers',
+                            name='Account Equity'
+                            )
+
+        trace1 = go.Scatter(x=[start_mdd,end_mdd],
+                            y=[trade_info.loc[start_mdd].equity,trade_info.loc[end_mdd].equity],
+                            text = ['Draw Down Start','Draw Down End'],
+                            hoverinfo='text',
+                            mode='markers',
+                            name='Draw Down',
+                            showlegend=False,
+                            marker=dict(
+                                color='red'
+                            )
+                            )
+
+        trace2 = go.Scatter(x=[trade_info.entry.iloc[0]],
+                            y=[trade_info.equity.max()],
+                            mode='markers',
+                            name='Performance Info',
+                            text=['Sharpe: '+str(round(sharpe,2))+
+                                  '<br>APR: '+str(round(apr,2))+'%'+
+                                  '<br>Accuracy: '+str(round(acc,2))+'%'+
+                                  '<br>Expectancy: '+str(round(exp,2))+' pips'+
+                                  '<br>Maximum Drawdown: '+str(round(100*mdd,2))+'%'+
+                                  '<br>Drawdown Duration: '+str(ddd)],
+                            hoverinfo='text',
+                            marker=dict(
+                                color='green',
+                                symbol='triangle-left',
+                                size=20
+                            ))
+
+        trace3 = go.Scatter(x=[trade_info.entry.iloc[0]],
+                            y=[trade_info.equity.max()*0.9],
+                            mode='markers',
+                            name='Pattern Info',
+                            text=['Total Patterns Found: '+str(total)+
+                                  '<br>Correct: '+str(correct)+
+                                  '<br>-Pairwise Accuracy & Expectancy-'+
+                                  pair_labels],
+                            hoverinfo='text',
+                            marker=dict(
+                                color='black',
+                                symbol='triangle-right',
+                                size=20
+                            ))
+
+        layout = go.Layout(title=title,
+                           xaxis=dict(title='Trades Placed'),
+                           yaxis=dict(title='Account Equity ($)'),
+                           annotations=[dict(x = start_mdd,
+                                             y = trade_info.loc[start_mdd].equity,
+                                             ax = 100,
+                                             ay = 0,
+                                             text = "Start Drawdown",
+                                             arrowcolor = "red",
+                                             arrowsize = 3,
+                                             arrowwidth = 1,
+                                             arrowhead = 1),
+                                        dict(x=end_mdd,
+                                             y=trade_info.loc[end_mdd].equity,
+                                             ax = -100,
+                                             ay = 0,
+                                             text="End Drawdown",
+                                             arrowcolor="red",
+                                             arrowsize=3,
+                                             arrowwidth=1,
+                                             arrowhead=1)
+                                        ])
+
+        data = [trace0,trace1,trace2,trace3]
+
+        fig = go.Figure(data=data, layout=layout)
+
+        py.offline.plot(fig)
+
+    def max_dd(self,returns):
+        """Assumes returns is a pandas Series"""
+        r = returns.add(1).cumprod()
+        dd = r.div(r.cummax()).sub(1)
+        mdd = dd.min()
+        end = dd.idxmin()
+        start = r.loc[:end].idxmax()
+        return mdd, start, end
 
     def walk(self, data, sign, stop=10):
 
         price = data
-        #low = data.low
-        #high = data.high
 
         stop_amount = float(stop) / float(10000)
         spread = 2.0/10000.0
@@ -276,9 +479,9 @@ class PatternBot(object):
 
                 elif price[i] < stop_loss:
 
-                    return price[i] - price[0] - spread
+                    return price[i] - price[0] - spread, price.index[i]
 
-            return price[-1] - price[0] - spread
+            return price[-1] - price[0] - spread, price.index[-1]
 
 
         elif sign == -1:
@@ -297,9 +500,9 @@ class PatternBot(object):
 
                 elif price[i] > stop_loss:
 
-                    return price[0] - price[i] - spread
+                    return price[0] - price[i] - spread, price.index[i]
 
-            return price[0] - price[-1] - spread
+            return price[0] - price[-1] - spread, price.index[-1]
 
     def read_in_data(self):
 
@@ -514,14 +717,11 @@ class PatternBot(object):
                         time.sleep(60*3)
                         #[pattern, sense, current_idx, current_pat]
 
-
-
-
             i += 1
 
 
-if False:
+if __name__ == '__main__':
 
-    data = backtestData(n_split=500,frame='5year')
+    data = backtestData(n_split=500,frame='1year')
     bot = PatternBot(data=data,instrument=pairs)
-    bot.backtest(data,[50.0,10,5.0])
+    bot.backtest(data,[20.0,5,15.0])

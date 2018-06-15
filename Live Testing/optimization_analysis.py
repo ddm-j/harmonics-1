@@ -3,5 +3,5 @@ import numpy as np
 
 results = pd.read_csv('OptimizationResults-1year.csv')
 
-idx = results.exp.idxmax()
+idx = results.sharpe.idxmax()
 print(results.iloc[idx])
