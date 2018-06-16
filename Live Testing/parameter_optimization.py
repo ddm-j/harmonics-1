@@ -10,9 +10,9 @@ class optimizer(object):
     def __init__(self,n_proc,frame):
 
         self.n_proc = n_proc
-        self.error_vals = [2.0,5.0,10.0,15.0,20.0,30.0]
-        self.stop_vals = [5.0,10.0,15.0,20.0,25.0,30.0,40.0,50.0,60.0]
-        self.peak_vals = [5,10,15,20]
+        self.error_vals = [2.0,5.0]#,10.0,15.0,20.0,30.0]
+        self.stop_vals = [5.0,10.0]#,15.0,20.0,25.0,30.0,40.0,50.0,60.0]
+        self.peak_vals = [5,10]#,15,20]
         self.results = pd.DataFrame(columns=['stop','peak','error','sharpe','apr','acc','exp'])
         self.frame = frame
 
@@ -53,8 +53,6 @@ class optimizer(object):
         print('Elapsed:',round(elapsed),'- Remaining:',round(remaining))
 
 
-
-
     def search(self):
 
         self.start = time.time()
@@ -69,7 +67,31 @@ class optimizer(object):
         p.close()
         p.join()
 
-        self.results.to_csv('OptimizationResults-'+self.frame+'.csv')
+        # Push Results to the Web
+
+        # Create HTML Code
+
+        selection = ["<input onClick=javascript:getVal();return false; type=radio name=selection value="
+                     +str(round(i[0]))+'-'+str(round(i[1]))+'-'+str(round(i[2]))  for i in zip(self.results.stop,
+                                                                             self.results.peak,
+                                                                             self.results.error)]
+        print(selection)
+        self.results['selection'] = selection
+
+        ip, user, passwd = 'hedgefinancial.us', 'hedgefin@146.66.103.215', 'Allmenmustdie1!'
+        self.results = self.results[['selection','sharpe','apr','acc','exp','stop','peak','error']]
+        self.results.columns = [['Selction','Sharpe Ratio','APR','Accuracy','Expectancy (pips)','Stop Loss','Peak Parameter','Error']]
+        self.results = self.results.round(2)
+
+
+        self.results.to_csv('BTData/'+self.frame+'/master.csv')
+
+        filepath = '~/public_html/hedge_vps/Backtests/' + self.frame + '/'
+        additional_path = '~/Desktop/harmonics-1/Live\ Testing/BTData/'+self.frame+'/master.csv'
+
+        cmd = 'scp -P 18765 %s %s:%s' % (additional_path, user, filepath)
+        os.system(cmd)
+        os.system('rm '+additional_path)
 
         print('***************************')
         print('Exiting, Optimization Complete')

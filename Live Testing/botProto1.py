@@ -162,8 +162,7 @@ class backtestResults(object):
                                 size=20
                             ))
 
-        layout = go.Layout(title=title,
-                           xaxis=dict(title='Trades Placed'),
+        layout = go.Layout(xaxis=dict(title='Trades Placed'),
                            yaxis=dict(title='Account Equity ($)'),
                            annotations=[dict(x = start_mdd,
                                              y = trade_info.loc[start_mdd].equity,
@@ -193,29 +192,43 @@ class backtestResults(object):
         filename = '-'.join(filename)
         self.filename = filename
 
-        py.offline.plot(fig,filename='BTData/'+filename+'.html',auto_open=False)
+        py.offline.plot(fig,filename='BTData/'+self.frame+'/'+filename+'.html',auto_open=False)
 
-    def push2web(self):
+    def push2web(self,opt_frame=None,del_files=True):
 
-        ip,user,passwd = 'hedgefinancial.us', 'hedge_vps@hedgefinancial.us', 'Allmenmustdie1!'
+        # opt_frame is an optional frame to push to the server
 
-        filepath = 'hedge_vps/Backtests/'+self.frame+'/'+self.filename
-        localpath = 'BTData/'+self.frame+'/'+self.filename
+        # Send Trade Info to CSV
+
+        clean_df = self.trade_info[['instrument','entry','exit','pos_size','pnl','equity']]
+        clean_df.columns = [['Pair','Entry','Exit','Postion Size','PnL (pips)','Realized Equity']]
+        clean_df['PnL (pips)'] = 10000*clean_df['PnL (pips)']
+        clean_df = clean_df.round(2)
+        clean_df.to_csv('BTData/'+self.frame+'/'+self.filename+'.csv')
+
+        # Connect Via SSH
+
+        ip,user,passwd = 'hedgefinancial.us', 'hedgefin@146.66.103.215', 'Allmenmustdie1!'
         ext = ['.html','.csv']
+        filepath = '~/public_html/hedge_vps/Backtests/'+self.frame+'/'
+        localpath = '~/Desktop/harmonics-1/Live\ Testing/BTData/'+self.frame+'/'+self.filename
 
-        cmd = ['sshpass -p "%s" scp -r %s:%s %s'%(passwd,user,filepath+i,localpath+i) for i in ext]
+        localpath = localpath + ext[0] + ' ' + localpath + ext[1]
+        cmd = 'scp -P 18765 %s %s:%s'%(localpath,user,filepath)
+        os.system(cmd)
 
-        for i in cmd:
-            os.system(i)
+        if del_files:
+
+            os.system('rm '+localpath)
 
 
 class backtestData(object):
 
     def __init__(self,frame,n_split):
-
         self.pairs = pd.read_csv('pairs.csv').values[0]
         pairs = self.pairs
         self.frame = frame
+
 
         hist_data_hour = pd.DataFrame()
         hist_data_min = {}
@@ -267,7 +280,7 @@ class PatternBot(object):
         self.pairs = pd.read_csv('pairs.csv').values[0]
         self.err_allowed = 5.0
 
-    def backtest(self,data_object,params):
+    def backtest(self,data_object,params,web_up=True):
 
         self.frame = data_object.frame
 
@@ -377,8 +390,6 @@ class PatternBot(object):
 
         equity = self.pnl2equity(pnl,sizes,[data_object.historical_all[self.pairs[0]].index.tolist(),entry_dates,exit_dates],equity)
 
-        print(len(equity),len(entry_dates),len(exit_dates),len(pnl))
-
         self.trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
                                    'pnl':pnl,'equity':equity[1:]})
 
@@ -396,6 +407,11 @@ class PatternBot(object):
         self.btRes = backtestResults([[stop_loss,peak_param,pattern_err],
                                       self.performance,self.trade_info,self.patt_info,
                                      self.pairs,self.frame])
+
+        if web_up:
+
+            self.btRes.gen_plot()
+            self.btRes.push2web()
 
         return self.trade_info,ext_perf
 
@@ -805,5 +821,3 @@ if __name__ == '__main__':
     data = backtestData(n_split=2000,frame='ytd')
     bot = PatternBot(data=data,instrument=pairs)
     info,params=bot.backtest(data,[25.0,15,20.0])
-    bot.btRes.gen_plot()
-    bot.btRes.push2web()
