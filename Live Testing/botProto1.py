@@ -7,10 +7,6 @@ import oandapyV20.endpoints.positions as positions
 import oandapyV20.endpoints.instruments as instruments
 from oandapyV20.contrib.requests import MarketOrderRequest
 from oandapyV20.exceptions import V20Error
-import logging
-import pandas as pd
-import numpy as np
-import harmonic_functions
 import time
 import warnings
 import plotly as py
@@ -129,8 +125,9 @@ class PatternBot(object):
         self.hist_data = data_object.data_runner
 
         last_patt_start = 0
+        last_trade_time = 0
 
-        # Begin Backtesting Loop
+        # LoopStart
 
         for i in range(0,len(data_object.data_feed)):
 
@@ -150,9 +147,10 @@ class PatternBot(object):
                 pair = j
                 patterns = results_dict[j]
 
-                if patterns != None and patterns[-1][0] != last_patt_start:
+                if patterns != None and patterns[-1][0] != last_patt_start and data_object.data_feed.iloc[i].name != last_trade_time:
 
                     last_patt_start = patterns[-1][0]
+                    last_trade_time = data_object.data_feed.iloc[i].name
 
                     patt_cnt += 1
 
@@ -184,7 +182,7 @@ class PatternBot(object):
 
                     if Plot == True:
 
-                        print('Pattern Found ', str(pair))
+                        print('Pattern Found ', str(pair),trade_time)
 
                         idx = patterns[2]
                         start = np.array(idx).min()
@@ -196,11 +194,11 @@ class PatternBot(object):
                         print(label)
 
                         plt.clf()
-                        plt.plot(np.arange(start, end + 1), self.hist_data[pair].iloc[start:end + 1].values)
+                        plt.plot(np.arange(start, end + 1), self.hist_data[pair].iloc[-(end-start+1):].values)
                         plt.plot(np.arange(end,end+20),data_object.data_feed[pair].iloc[i:i+20].values)
-                        plt.scatter(np.arange(end,end+20),data_object.historical_all[pair].low.iloc[i+100:i+120],c='r')
+                        plt.scatter(np.arange(end,end+20),data_object.historical_all[pair].low.iloc[i+500:i+520],c='r')
                         plt.scatter(np.arange(end, end + 20),
-                                    data_object.historical_all[pair].high.iloc[i + 100:i + 120], c='g')
+                                    data_object.historical_all[pair].high.iloc[i + 500:i + 520], c='g')
                         plt.plot(idx, pattern, c='r')
                         plt.title(label)
                         plt.show()
@@ -208,19 +206,9 @@ class PatternBot(object):
         risk = self.perRisk
         equity = [1000]
 
-        for i in range(0, len(pnl)):
+        equity = self.pnl2equity(pnl,sizes,[data_object.historical_all[self.pairs[0]].index.tolist(),entry_dates,exit_dates],equity)
 
-            position = posSizeBT(equity[i], risk, 20)
-
-            sizes.append(position)
-
-            revenue = position * pnl[i]
-
-            comission = revenue * (25 / 1000000)
-
-            profit = revenue - comission
-
-            equity = np.append(equity, equity[i] + profit)
+        print(len(equity),len(entry_dates),len(exit_dates),len(pnl))
 
         self.trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
                                    'pnl':pnl,'equity':equity[1:]})
@@ -232,11 +220,91 @@ class PatternBot(object):
 
         self.patt_info = [patt_cnt,corr_pats,pair_pos,pair_neg]
 
-        ext_perf = self.performance
+        ext_perf = self.performance.copy()
 
         ext_perf[0:0] = [stop_loss,peak_param,pattern_err]
 
         return self.trade_info,ext_perf
+
+    def pnl2equity(self,pnl,sizes,dates,equity):
+
+        total_dates = dates[0]
+        entry_dates = dates[1]
+        exit_dates = dates[2]
+
+        current_eq = equity[0]
+        dups = []
+        dups_cnt = []
+
+        position_exit = []
+        position_profit = []
+
+        for i in range(0, len(total_dates)):
+
+            if total_dates[i] in entry_dates:
+
+                ind = entry_dates.index(total_dates[i])
+
+                cost = current_eq*self.perRisk/100.0
+
+                # Determine Trade Profit
+
+                pnl_i = pnl[ind]
+
+                position = posSizeBT(current_eq, self.perRisk, 20)
+
+                # Update Current Equity
+
+                current_eq = (1.0-self.perRisk/100.0)*current_eq
+
+                sizes.append(position)
+
+                revenue = cost + position * pnl_i
+
+                comission = revenue * (25 / 1000000)
+
+                profit = revenue - comission
+
+                # Check For duplicate:
+
+                if exit_dates[ind] in position_exit:
+                    ind2 = position_exit.index(exit_dates[ind])
+                    position_profit[ind2] += profit
+                    dups[ind2] = True
+                    dups_cnt[ind2] += 1
+                else:
+                    position_profit.append(profit)
+                    position_exit.append(exit_dates[ind])
+                    dups.append(False)
+                    dups_cnt.append(1)
+
+            if total_dates[i] in position_exit:
+
+                ind = position_exit.index(total_dates[i])
+
+                # Update Current Equity
+
+                current_eq += position_profit[ind]
+
+                if dups[ind]:
+                    for j in range(dups_cnt[ind]):
+                        equity.append(current_eq)
+
+                else:
+                    equity.append(current_eq)
+
+                del position_exit[ind]
+                del position_profit[ind]
+                del dups[ind]
+                del dups_cnt[ind]
+
+        if position_profit != []:
+
+            for i in position_profit:
+
+                equity.append(equity[-1]+i)
+
+        return equity
 
     def get_performance(self,trade_info,extra):
 
@@ -283,11 +351,6 @@ class PatternBot(object):
         ddd = end_mdd-start_mdd
 
         mdd = [mdd,ddd,start_mdd,end_mdd]
-
-        # Pattern Counts
-
-        counts = [patt_cnt,corr_pats]
-
 
         return [sharpe,apr,acc,expectancy,mdd]
 
@@ -389,6 +452,7 @@ class PatternBot(object):
                             mode='markers',
                             name='Pattern Info',
                             text=['Total Patterns Found: '+str(total)+
+                                  '<br>Average Downtime: '+str(average_freq)+
                                   '<br>Correct: '+str(correct)+
                                   '<br>-Pairwise Accuracy & Expectancy-'+
                                   pair_labels],
@@ -460,9 +524,9 @@ class PatternBot(object):
 
                 elif price[i] < stop_loss:
 
-                    return price[i] - price[0] - spread, price.index[i]
+                    return (price[i] - spread) - price[0], price.index[i]
 
-            return price[-1] - price[0] - spread, price.index[-1]
+            return (price[-1] - spread) - price[0], price.index[-1]
 
 
         elif sign == -1:
@@ -481,9 +545,9 @@ class PatternBot(object):
 
                 elif price[i] > stop_loss:
 
-                    return price[0] - price[i] - spread, price.index[i]
+                    return (price[0] - spread) - price[i], price.index[i]
 
-            return price[0] - price[-1] - spread, price.index[-1]
+            return (price[0] - spread) - price[-1], price.index[-1]
 
     def read_in_data(self):
 
@@ -605,7 +669,7 @@ class PatternBot(object):
 
         for i in self.pairs:
 
-            pattern = self.check_pattern(self.hist_data[i],err_allowed=patt_err,range_param=range)
+            pattern = self.check_pattern(self.hist_data[i].iloc[-500:],err_allowed=patt_err,range_param=range)
 
             if pattern != None:
 
@@ -618,8 +682,6 @@ class PatternBot(object):
         else:
 
             return None
-
-
 
     def position_sizer(self):
 
@@ -703,7 +765,7 @@ class PatternBot(object):
 
 if __name__ == '__main__':
 
-    data = backtestData(n_split=500,frame='ytd')
+    data = backtestData(n_split=500,frame='1year')
     bot = PatternBot(data=data,instrument=pairs)
-    bot.backtest(data,[20.0,5,15.0])
+    bot.backtest(data,[25.0,20,30.0])
     bot.gen_plot(bot.trade_info,bot.performance,bot.patt_info)
