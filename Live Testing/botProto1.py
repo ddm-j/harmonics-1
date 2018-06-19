@@ -1,5 +1,7 @@
 import json
 from oandapyV20 import API
+import argparse
+import codecs
 from ftplib import FTP
 import oandapyV20.endpoints.orders as orders
 import oandapyV20.endpoints.pricing as pricing
@@ -9,6 +11,7 @@ import oandapyV20.endpoints.instruments as instruments
 from oandapyV20.contrib.requests import MarketOrderRequest
 from oandapyV20.exceptions import V20Error
 import time
+import subprocess
 import warnings
 import plotly as py
 from plotly import tools
@@ -44,7 +47,7 @@ data['spread'] = 0.0002
 
 class backtestResults(object):
 
-    def __init__(self,data):
+    def __init__(self,data,custom):
 
         self.parameters = data[0]
         self.performance = data[1]
@@ -52,6 +55,7 @@ class backtestResults(object):
         self.patt_info = data[3]
         self.pairs = data[4]
         self.frame = data[5]
+        self.custom = custom
 
     def gen_plot(self):
 
@@ -192,9 +196,15 @@ class backtestResults(object):
         filename = '-'.join(filename)
         self.filename = filename
 
-        py.offline.plot(fig,filename='BTData/'+self.frame+'/'+filename+'.html',auto_open=False)
+        if self.custom:
 
-    def push2web(self,opt_frame=None,del_files=True):
+            py.offline.plot(fig,filename='BTData/'+self.frame+'/'+filename+'.html',auto_open=False)
+
+        else:
+
+            py.offline.plot(fig, filename='BTData/Custom/' + filename + '.html', auto_open=False)
+
+    def push2web(self,del_files=True,custom=False):
 
         # opt_frame is an optional frame to push to the server
 
@@ -204,38 +214,54 @@ class backtestResults(object):
         clean_df.columns = [['Pair','Entry','Exit','Postion Size','PnL (pips)','Realized Equity']]
         clean_df['PnL (pips)'] = 10000*clean_df['PnL (pips)']
         clean_df = clean_df.round(2)
-        clean_df.to_csv('BTData/'+self.frame+'/'+self.filename+'.csv')
+        if custom:
+            clean_df.to_csv('BTData/'+self.frame+'/'+self.filename+'.csv')
+        else:
+            clean_df.to_csv('BTData/Custom/'+self.filename+'.csv')
 
         # Connect Via SSH
 
         ip,user,passwd = 'hedgefinancial.us', 'hedgefin@146.66.103.215', 'Allmenmustdie1!'
         ext = ['.html','.csv']
-        filepath = '~/public_html/hedge_vps/Backtests/'+self.frame+'/'
-        localpath = '~/Desktop/harmonics-1/Live\ Testing/BTData/'+self.frame+'/'+self.filename
+        if custom:
+            filepath = '~/public_html/hedge_vps/Backtests/Custom/'
+            localpath = '~/Desktop/harmonics-1/Live\ Testing/BTData/Custom/'
+        else:
+            filepath = '~/public_html/hedge_vps/Backtests/' + self.frame + '/'
+            localpath = '~/Desktop/harmonics-1/Live\ Testing/BTData/' + self.frame + '/'
 
-        localpath = localpath + ext[0] + ' ' + localpath + ext[1]
+        table_fname = self.filename.replace('-','_')
+        local = localpath
+
+        # Generate Table
+
+        os.system('csvtotable '+localpath+self.filename+ext[1]+' '+localpath+table_fname+ext[0]+' -c \'Backtest Data\'')
+
+        localpath = localpath +self.filename + ext[0] + ' ' + localpath + table_fname + ext[0]
+
         cmd = 'scp -P 18765 %s %s:%s'%(localpath,user,filepath)
         os.system(cmd)
 
         if del_files:
 
-            os.system('rm '+localpath)
+            os.system('rm '+localpath+' '+local+self.filename+ext[1])
 
 
 class backtestData(object):
 
-    def __init__(self,frame,n_split):
-        self.pairs = pd.read_csv('pairs.csv').values[0]
-        pairs = self.pairs
+    def __init__(self,pairs,frame,n_split,dates=None):
+        self.pairs = pairs
         self.frame = frame
+        self.dates = []
 
+        print(self.frame)
 
         hist_data_hour = pd.DataFrame()
         hist_data_min = {}
         hist_data_all = {}
 
         for i in pairs:
-
+            print(i)
             tmp = pd.read_csv(self.frame +'/'+ i + '.csv')
             tmp.columns = ['Date', 'open', 'high', 'low', 'close','volume']
 
@@ -251,34 +277,51 @@ class backtestData(object):
 
             hist_data_hour[i] = tmp.close
 
-        self.historical_hour = hist_data_hour
-        self.historical_all = hist_data_all
+        if self.dates == None:
 
-        self.data_runner = self.historical_hour.iloc[:n_split]
-        self.data_feed = self.historical_hour.iloc[n_split:]
+            self.historical_hour = hist_data_hour
+            self.historical_all = hist_data_all
 
+            self.data_runner = self.historical_hour.iloc[:n_split]
+            self.data_feed = self.historical_hour.iloc[n_split:]
+
+        else:
+
+            for i in dates:
+                nearest = self.nearest([i], hist_data_hour.index)
+                self.dates.append(nearest)
+
+            self.historical_hour = hist_data_hour[self.dates[0]:self.dates[1]]
+            self.historical_all = hist_data_all
+
+            self.data_runner = self.historical_hour.iloc[:n_split]
+            self.data_feed = self.historical_hour.iloc[n_split:]
+
+    def nearest(self, items, pivot):
+        return min(items, key=lambda x: abs(x - pivot))
 
 class PatternBot(object):
 
-    def __init__(self,instrument,data,test=100,train=2000):
+    def __init__(self,pairs,instrument,data,risk=1,custom=False):
 
         self.accountID = "101-001-5115623-001"
         self.token = '9632158e473af28669bb91a6fb4e86dd-41aaaa4867de5abf64eda43980f25672' # Insert here
         self.api = API(access_token=self.token)
         self.instrument = instrument
         self.data = data
-        self.train = train
-        self.test = test
-        self.perRisk = 1
+        self.perRisk = risk
         self.pipRisk = 20
+        self.test = None
+        self.train = None
         self.tradeCounter = self.test
         self.tradeTimer = []
         self.predSec = 56
         self.predMin = 59
         self.lastPrediction = 0
         self.state = 1 #something
-        self.pairs = pd.read_csv('pairs.csv').values[0]
+        self.pairs = pairs
         self.err_allowed = 5.0
+        self.custom = custom
 
     def backtest(self,data_object,params,web_up=True):
 
@@ -406,12 +449,12 @@ class PatternBot(object):
 
         self.btRes = backtestResults([[stop_loss,peak_param,pattern_err],
                                       self.performance,self.trade_info,self.patt_info,
-                                     self.pairs,self.frame])
+                                     self.pairs,self.frame],custom=self.custom)
 
         if web_up:
 
             self.btRes.gen_plot()
-            self.btRes.push2web()
+            #self.btRes.push2web()
 
         return self.trade_info,ext_perf
 
@@ -818,6 +861,37 @@ class PatternBot(object):
 
 if __name__ == '__main__':
 
-    data = backtestData(n_split=2000,frame='ytd')
-    bot = PatternBot(data=data,instrument=pairs)
-    info,params=bot.backtest(data,[25.0,15,20.0])
+    # Parse Arguments
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-dates',nargs='+',help='Start and End Date for Backtest, %d-%m-%Y')
+    group.add_argument('-frame',help='Frame for test, options: ytd, 1year, 2year, 5year')
+    parser.add_argument('-pairs',nargs='+',help='Pairs for backtesting, format XXX_YYY ZZZ_FFF')
+    parser.add_argument('-parameters',nargs='+',help='strategy parameters, format stop peak error')
+    parser.add_argument('--risk',help='Risk per position, values 1-100')
+    args = parser.parse_args()
+
+    if args.dates != None:
+        frame = 'Custom'
+    else:
+        frame = args.frame
+    if args.risk == None:
+        risk = 1
+    dates = [datetime.datetime.strptime(i,'%d-%m-%Y') for i in args.dates]
+    pairs = args.pairs
+    parameters = args.parameters
+    risk = args.risk
+    parameters[0] = float(parameters[0])
+    parameters[1] = int(parameters[1])
+    parameters[2] = float(parameters[2])
+    risk = float(risk) 
+
+    print(dates)
+    print(frame)
+    print(parameters)
+    print(pairs)
+    print(risk)
+
+    data = backtestData(n_split=500,pairs=pairs,frame=frame,dates=dates)
+    bot = PatternBot(data=data,risk=risk,pairs=pairs,custom=True if frame=='Custom' else False,instrument='test')
+    info,params=bot.backtest(data,parameters,web_up=True)

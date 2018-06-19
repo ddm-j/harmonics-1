@@ -2,6 +2,11 @@ from itertools import repeat
 from sklearn.model_selection import ParameterGrid
 from botProto1 import *
 import warnings
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("frame")
+args = parser.parse_args()
 
 warnings.filterwarnings("ignore",category =RuntimeWarning)
 
@@ -10,9 +15,9 @@ class optimizer(object):
     def __init__(self,n_proc,frame):
 
         self.n_proc = n_proc
-        self.error_vals = [2.0,5.0]#,10.0,15.0,20.0,30.0]
-        self.stop_vals = [5.0,10.0]#,15.0,20.0,25.0,30.0,40.0,50.0,60.0]
-        self.peak_vals = [5,10]#,15,20]
+        self.error_vals = [2.0,5.0,10.0,15.0,20.0,30.0]
+        self.stop_vals = [5.0,10.0,15.0,20.0,25.0,30.0,40.0,50.0,60.0]
+        self.peak_vals = [5,10,15,20]
         self.results = pd.DataFrame(columns=['stop','peak','error','sharpe','apr','acc','exp'])
         self.frame = frame
 
@@ -71,11 +76,10 @@ class optimizer(object):
 
         # Create HTML Code
 
-        selection = ["<input onClick=javascript:getVal();return false; type=radio name=selection value="
-                     +str(round(i[0]))+'-'+str(round(i[1]))+'-'+str(round(i[2]))  for i in zip(self.results.stop,
+        selection = ["<input onClick=\'javasrcript:getVal();return false;\' type=radio name=selection value="
+                     +str(round(i[0]))+'-'+str(round(i[1]))+'-'+str(round(i[2]))+'>'  for i in zip(self.results.stop,
                                                                              self.results.peak,
                                                                              self.results.error)]
-        print(selection)
         self.results['selection'] = selection
 
         ip, user, passwd = 'hedgefinancial.us', 'hedgefin@146.66.103.215', 'Allmenmustdie1!'
@@ -87,11 +91,13 @@ class optimizer(object):
         self.results.to_csv('BTData/'+self.frame+'/master.csv')
 
         filepath = '~/public_html/hedge_vps/Backtests/' + self.frame + '/'
-        additional_path = '~/Desktop/harmonics-1/Live\ Testing/BTData/'+self.frame+'/master.csv'
+        additional_path = '~/Desktop/harmonics-1/Live\ Testing/BTData/'+self.frame+'/master.html'
+
+        os.system('csvtotable '+ 'BTData/'+self.frame+'/master.csv BTData/'+self.frame+'/master.html -c \'Available Backtests\'')
 
         cmd = 'scp -P 18765 %s %s:%s' % (additional_path, user, filepath)
         os.system(cmd)
-        os.system('rm '+additional_path)
+        os.system('rm '+additional_path+' '+additional_path.replace('.html','.csv'))
 
         print('***************************')
         print('Exiting, Optimization Complete')
@@ -101,7 +107,7 @@ if __name__ == '__main__':
 
     #multiprocessing.freeze_support()
 
-    opt = optimizer(n_proc=4,frame='ytd')
+    opt = optimizer(n_proc=4,frame=args.frame)
     opt.prep()
     print('Data Prepped, beginning search')
     opt.search()
