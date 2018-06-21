@@ -55,7 +55,15 @@ class backtestResults(object):
         self.patt_info = data[3]
         self.pairs = data[4]
         self.frame = data[5]
+        self.patterns_info = data[6]
         self.custom = custom
+        self.local_base = '~/Desktop/harmonics-1/Live\ Testing/BTData/'+self.frame+'/'
+        self.server_base = '~/public_html/hedge_vps/Backtests/'+self.frame+'/'
+
+        filename = [str(round(i)) for i in self.parameters]
+        filename = '-'.join(filename)
+
+        self.filename = filename
 
     def gen_plot(self):
 
@@ -192,17 +200,60 @@ class backtestResults(object):
 
         fig = go.Figure(data=data, layout=layout)
 
-        filename = [str(round(i)) for i in self.parameters]
-        filename = '-'.join(filename)
-        self.filename = filename
+        py.offline.plot(fig,filename='BTData/'+self.frame+'/'+self.filename+'/'+self.filename+'.html',auto_open=False)
 
-        if self.custom:
 
-            py.offline.plot(fig,filename='BTData/'+self.frame+'/'+filename+'.html',auto_open=False)
+    def gen_trade_plot(self):
 
-        else:
+        # Create folder:
 
-            py.offline.plot(fig, filename='BTData/Custom/' + filename + '.html', auto_open=False)
+        os.system('mkdir '+self.local_base+self.filename)
+
+        for i in self.patterns_info:
+
+            trace0 = go.Ohlc(x=i['df'].index,
+                            open=i['df'].open,
+                            high=i['df'].high,
+                            low=i['df'].low,
+                            close=i['df'].close,
+                             name='OHLC Data')
+            trace1 = go.Scatter(x=i['pattern_data'].index,
+                                y=i['pattern_data'].values,
+                                line=dict(color='black'),
+                                name='Harmonic Pattern')
+
+            trace2 = go.Scatter(x=[i['pattern_data'].index[-1],i['df'].close.index[-1]],
+                                y=[i['df'].close[i['trade_dates'][0]],i['df'].close[i['trade_dates'][0]]],
+                                line=dict(
+                                    color='green',
+                                    width=4,
+                                    dash='dash'),
+                                name='Entry'
+                                )
+
+            trace3 = go.Scatter(x=[i['pattern_data'].index[-1], i['df'].close.index[-1]],
+                                y=[i['df'].close[i['trade_dates'][1]], i['df'].close[i['trade_dates'][1]]],
+                                line=dict(
+                                    color='red',
+                                    width=4,
+                                    dash='dash'),
+                                name='Exit'
+                                )
+
+            data = [trace0,trace1,trace2,trace3]
+
+            layout = go.Layout(
+                title=i['pattern_info'][0]+' '+i['pattern_info'][1],
+                xaxis=dict(
+                    rangeslider=dict(
+                        visible=False
+                    ), title='Date'
+                ),
+                yaxis=dict(title='Quote Price')
+            )
+
+            fig = go.Figure(data=data, layout=layout)
+            py.offline.plot(fig,filename='BTData/'+self.frame+'/'+self.filename+'/'+str(i['id'])+'.html',auto_open=False)
 
     def push2web(self,del_files=True,custom=False):
 
@@ -210,41 +261,37 @@ class backtestResults(object):
 
         # Send Trade Info to CSV
 
-        clean_df = self.trade_info[['instrument','entry','exit','pos_size','pnl','equity']]
-        clean_df.columns = [['Pair','Entry','Exit','Postion Size','PnL (pips)','Realized Equity']]
+        selection = ["<input onClick=\'javascript:getVal1();return false;\' type=radio name=\'selection1\' value="
+                     +str(i)+ '>' for i in range(0,len(self.patterns_info))]
+
+        self.trade_info['selection'] = selection
+        clean_df = self.trade_info[['selection','instrument','entry','exit','pos_size','pnl','equity']]
+        clean_df.columns = [['Selection','Pair','Entry','Exit','Postion Size','PnL (pips)','Realized Equity']]
         clean_df['PnL (pips)'] = 10000*clean_df['PnL (pips)']
         clean_df = clean_df.round(2)
-        if custom:
-            clean_df.to_csv('BTData/'+self.frame+'/'+self.filename+'.csv')
-        else:
-            clean_df.to_csv('BTData/Custom/'+self.filename+'.csv')
+        clean_df.to_csv('BTData/'+self.frame+'/'+self.filename+'/'+self.filename+'.csv')
 
         # Connect Via SSH
 
         ip,user,passwd = 'hedgefinancial.us', 'hedgefin@146.66.103.215', 'Allmenmustdie1!'
         ext = ['.html','.csv']
-        if custom:
-            filepath = '~/public_html/hedge_vps/Backtests/Custom/'
-            localpath = '~/Desktop/harmonics-1/Live\ Testing/BTData/Custom/'
-        else:
-            filepath = '~/public_html/hedge_vps/Backtests/' + self.frame + '/'
-            localpath = '~/Desktop/harmonics-1/Live\ Testing/BTData/' + self.frame + '/'
 
         table_fname = self.filename.replace('-','_')
-        local = localpath
 
         # Generate Table
 
-        os.system('csvtotable '+localpath+self.filename+ext[1]+' '+localpath+table_fname+ext[0]+' -c \'Backtest Data\'')
+        local_file = self.local_base+self.filename+'/'+self.filename
+        local_tab = self.local_base+self.filename+'/'+table_fname
 
-        localpath = localpath +self.filename + ext[0] + ' ' + localpath + table_fname + ext[0]
+        os.system('csvtotable '+local_file+ext[1]+' '+local_tab+ext[0]+' -c \'Backtest Data\'')
+        os.system('rm '+local_file+ext[1])
 
-        cmd = 'scp -P 18765 %s %s:%s'%(localpath,user,filepath)
+        cmd = 'scp -r -P 18765 %s %s:%s'%(self.local_base+self.filename,user,self.server_base)
         os.system(cmd)
 
         if del_files:
 
-            os.system('rm '+localpath+' '+local+self.filename+ext[1])
+            os.system('rm -r '+self.local_base+'*')
 
 
 class backtestData(object):
@@ -252,7 +299,7 @@ class backtestData(object):
     def __init__(self,pairs,frame,n_split,dates=None):
         self.pairs = pairs
         self.frame = frame
-        self.dates = []
+        self.dates = dates
 
         print(self.frame)
 
@@ -286,7 +333,7 @@ class backtestData(object):
             self.data_feed = self.historical_hour.iloc[n_split:]
 
         else:
-
+            self.dates = []
             for i in dates:
                 nearest = self.nearest([i], hist_data_hour.index)
                 self.dates.append(nearest)
@@ -326,6 +373,8 @@ class PatternBot(object):
     def backtest(self,data_object,params,web_up=True):
 
         self.frame = data_object.frame
+
+        patterns_info = []
 
         # Extract Parameters
 
@@ -396,6 +445,15 @@ class PatternBot(object):
 
                     pnl = np.append(pnl,pips)
 
+                    # Append Pattern Info
+
+                    tmp_patt = self.hist_data[pair][patterns[2]]
+
+                    tmp_dict = {'id':patt_cnt-1,'df':data_object.historical_all[pair][tmp_patt.index[0]:exit_time],
+                                'pattern_data':tmp_patt,'pattern_info':[pair,patterns[1]+' '+patterns[0]],
+                                'trade_dates':[last_trade_time,exit_time]}
+                    patterns_info.append(tmp_dict)
+
                     if pips > 0:
 
                         corr_pats += 1
@@ -449,12 +507,12 @@ class PatternBot(object):
 
         self.btRes = backtestResults([[stop_loss,peak_param,pattern_err],
                                       self.performance,self.trade_info,self.patt_info,
-                                     self.pairs,self.frame],custom=self.custom)
+                                     self.pairs,self.frame,patterns_info],custom=self.custom)
 
         if web_up:
-
+            self.btRes.gen_trade_plot()
             self.btRes.gen_plot()
-            #self.btRes.push2web()
+            self.btRes.push2web()
 
         return self.trade_info,ext_perf
 
@@ -765,7 +823,7 @@ class PatternBot(object):
 
         for i in self.pairs:
 
-            pattern = self.check_pattern(self.hist_data[i].iloc[-500:],err_allowed=patt_err,range_param=range)
+            pattern = self.check_pattern(self.hist_data[i],err_allowed=patt_err,range_param=range)
 
             if pattern != None:
 
@@ -873,11 +931,13 @@ if __name__ == '__main__':
 
     if args.dates != None:
         frame = 'Custom'
+        dates = [datetime.datetime.strptime(i, '%d-%m-%Y') for i in args.dates]
     else:
         frame = args.frame
+        dates = None
     if args.risk == None:
         risk = 1
-    dates = [datetime.datetime.strptime(i,'%d-%m-%Y') for i in args.dates]
+
     pairs = args.pairs
     parameters = args.parameters
     risk = args.risk

@@ -15,16 +15,16 @@ class optimizer(object):
     def __init__(self,n_proc,frame):
 
         self.n_proc = n_proc
-        self.error_vals = [2.0,5.0,10.0,15.0,20.0,30.0]
-        self.stop_vals = [5.0,10.0,15.0,20.0,25.0,30.0,40.0,50.0,60.0]
-        self.peak_vals = [5,10,15,20]
+        self.error_vals = [2.0,5.0]#,10.0,15.0,20.0,30.0]
+        self.stop_vals = [5.0,10.0]#,15.0,20.0,25.0,30.0,40.0,50.0,60.0]
+        self.peak_vals = [5,10]#,15,20]
         self.results = pd.DataFrame(columns=['stop','peak','error','sharpe','apr','acc','exp'])
         self.frame = frame
 
     def prep(self):
 
-        self.data = backtestData(frame=self.frame,n_split=500)
-        self.bot = PatternBot(data=data,instrument=pairs)
+        self.data = backtestData(frame=self.frame,n_split=500,pairs=['EUR_USD','GBP_USD','AUD_USD','NZD_USD'])
+        self.bot = PatternBot(data=data,instrument=pairs,pairs=['EUR_USD','GBP_USD','AUD_USD','NZD_USD'])
         parameters = {'stop':self.stop_vals,'peak':self.peak_vals,'error':self.error_vals}
         self.grid = ParameterGrid(parameters)
 
@@ -76,7 +76,7 @@ class optimizer(object):
 
         # Create HTML Code
 
-        selection = ["<input onClick=\'javasrcript:getVal();return false;\' type=radio name=selection value="
+        selection = ["<input onClick=\'javascript:getVal();return false;\' type=radio name=selection value="
                      +str(round(i[0]))+'-'+str(round(i[1]))+'-'+str(round(i[2]))+'>'  for i in zip(self.results.stop,
                                                                              self.results.peak,
                                                                              self.results.error)]
