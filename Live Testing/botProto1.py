@@ -58,14 +58,16 @@ class backtestResults(object):
         self.patterns_info = data[6]
         self.custom = custom
         self.local_base = '~/Desktop/harmonics-1/Live\ Testing/BTData/'+self.frame+'/'
-        self.server_base = '~/public_html/hedge_vps/Backtests/'+self.frame+'/'
+        self.server_base = '~/public_html/hedge_vps/Backtests/proto2/'+self.frame+'/'
 
-        filename = [str(round(i)) for i in self.parameters]
+        filename = [str(i) for i in self.parameters]
         filename = '-'.join(filename)
 
         self.filename = filename
 
     def gen_plot(self):
+
+        os.system('mkdir ' + self.local_base + self.filename+'/')
 
         # Extract Trade Data
 
@@ -94,7 +96,8 @@ class backtestResults(object):
 
 
         pnl_grouped = self.trade_info.groupby('instrument')['pnl'].apply(list)
-        pnl_grouped = [pnl_grouped[pair] for pair in self.pairs]
+
+        pnl_grouped = [pnl_grouped[pair] for pair in pnl_grouped.index.tolist()]
 
         pnl_pos = [[x for x in pnl_grouped[i] if x > 0] for i in range(0,len(pnl_grouped))]
         pnl_neg = [[abs(x) for x in pnl_grouped[i] if x < 0] for i in range(0,len(pnl_grouped))]
@@ -207,8 +210,6 @@ class backtestResults(object):
 
         # Create folder:
 
-        os.system('mkdir '+self.local_base+self.filename)
-
         for i in self.patterns_info:
 
             trace0 = go.Ohlc(x=i['df'].index,
@@ -283,15 +284,15 @@ class backtestResults(object):
         local_file = self.local_base+self.filename+'/'+self.filename
         local_tab = self.local_base+self.filename+'/'+table_fname
 
-        os.system('csvtotable '+local_file+ext[1]+' '+local_tab+ext[0]+' -c \'Backtest Data\'')
+        os.system('csvtotable '+local_file+ext[1]+' '+local_tab+ext[0]+' -c \'Backtest Data\' >/dev/null')
         os.system('rm '+local_file+ext[1])
 
-        cmd = 'scp -r -P 18765 %s %s:%s'%(self.local_base+self.filename,user,self.server_base)
+        cmd = 'scp -r -P 18765 %s %s:%s >/dev/null'%(self.local_base+self.filename,user,self.server_base)
         os.system(cmd)
 
         if del_files:
 
-            os.system('rm -r '+self.local_base+'*')
+            os.system('rm -r '+self.local_base+self.filename+' >/dev/null')
 
 
 class backtestData(object):
@@ -378,9 +379,10 @@ class PatternBot(object):
 
         # Extract Parameters
 
-        stop_loss = params[0]
+        stop_loss_mod = params[0]
         peak_param = params[1]
         pattern_err = params[2]
+        atrs = params[3]
 
         Plot = False
 
@@ -405,6 +407,7 @@ class PatternBot(object):
 
         for i in range(0,len(data_object.data_feed)):
 
+
             # Get New Data and append to historical feed
 
             self.hist_data = self.hist_data.append(data_object.data_feed.iloc[i])
@@ -417,7 +420,6 @@ class PatternBot(object):
                 continue
 
             for j in results_dict:
-
                 pair = j
                 patterns = results_dict[j]
 
@@ -434,6 +436,32 @@ class PatternBot(object):
                     entry_dates.append(trade_time)
 
                     walk_data = data_object.historical_hour[pair][trade_time:]
+
+                    # Calculate Stop Loss
+
+
+                    tmp_hist = data_object.historical_all[pair][:trade_time]
+
+                    atr = []
+
+                    for k in range(0,len(tmp_hist)):
+
+                        tr = np.array([tmp_hist.high[k]-tmp_hist.low[k],tmp_hist.high[k]-tmp_hist.close[k-1],tmp_hist.low[k]-tmp_hist.close[k-1]])
+                        tr = np.max(abs(tr))
+                        if k < atrs:
+
+                            atr.append(tr)
+
+                        elif k == atrs:
+
+                            atr.append(np.mean(atr))
+
+                        else:
+
+                            atr.append(((atrs-1)*atr[-1]+tr)/(atrs))
+                    atr_trade = round(10000*atr[-1])
+
+                    stop_loss = stop_loss_mod*atr_trade
 
                     # Walk Forward Through Data
 
@@ -503,14 +531,14 @@ class PatternBot(object):
 
         ext_perf = self.performance.copy()
 
-        ext_perf[0:0] = [stop_loss,peak_param,pattern_err]
+        ext_perf[0:0] = [stop_loss_mod,peak_param,pattern_err,atrs]
 
-        self.btRes = backtestResults([[stop_loss,peak_param,pattern_err],
+        self.btRes = backtestResults([[stop_loss_mod,peak_param,pattern_err,atrs],
                                       self.performance,self.trade_info,self.patt_info,
                                      self.pairs,self.frame,patterns_info],custom=self.custom)
 
         if web_up:
-            self.btRes.gen_trade_plot()
+            #self.btRes.gen_trade_plot()
             self.btRes.gen_plot()
             self.btRes.push2web()
 
