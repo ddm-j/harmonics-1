@@ -390,6 +390,7 @@ class PatternBot(object):
         pair_neg = pd.DataFrame(dict((key, [0]) for key in self.pairs))
         pnl = []
         pair_list = []
+        quote_list = []
         entry_dates = []
         exit_dates = []
         sizes = []
@@ -427,6 +428,8 @@ class PatternBot(object):
 
                     last_patt_start = patterns[-1][0]
                     last_trade_time = data_object.data_feed.iloc[i].name
+
+                    quote_list.append(patterns[-1][-1])
 
                     patt_cnt += 1
 
@@ -517,7 +520,7 @@ class PatternBot(object):
         risk = self.perRisk
         equity = [1000]
 
-        equity = self.pnl2equity(pnl,sizes,[data_object.historical_all[self.pairs[0]].index.tolist(),entry_dates,exit_dates],equity)
+        equity = self.pnl2equity(pnl,sizes,pair_list,quote_list,[data_object.historical_all[self.pairs[0]].index.tolist(),entry_dates,exit_dates],equity)
 
         self.trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
                                    'pnl':pnl,'equity':equity[1:]})
@@ -545,7 +548,7 @@ class PatternBot(object):
         return self.trade_info,ext_perf
 
 
-    def pnl2equity(self,pnl,sizes,dates,equity):
+    def pnl2equity(self,pnl,sizes,pair_list,quote_list,dates,equity):
 
         total_dates = dates[0]
         entry_dates = dates[1]
@@ -569,8 +572,11 @@ class PatternBot(object):
                 # Determine Trade Profit
 
                 pnl_i = pnl[ind]
+                u_j = pair_list[ind][-3:] == 'JPY'
+                flip = pair_list[ind][:3] == 'USD'
+                quote = quote_list[ind]
 
-                position = posSizeBT(current_eq, self.perRisk, 20)
+                position = posSizeBT(current_eq,quote,self.perRisk, 20,flip=flip,u_j=u_j)
 
                 # Update Current Equity
 
