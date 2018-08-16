@@ -3,7 +3,6 @@ from sklearn.model_selection import ParameterGrid
 from botProto1 import *
 import warnings
 import argparse
-# Test GIT Branches
 
 parser = argparse.ArgumentParser()
 parser.add_argument("frame")
@@ -51,7 +50,6 @@ class optimizer(object):
 
         percent = 100*float(len(self.results))/float(len(self.grid))
 
-        
         elapsed = now - self.start
         total = elapsed*(1/(percent/100.0))
         remaining = total - elapsed
