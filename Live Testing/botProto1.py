@@ -317,7 +317,7 @@ class backtestData(object):
 
             tmp = tmp.set_index(tmp.Date)
 
-            tmp = tmp[['open', 'high', 'low', 'close']]
+            tmp = tmp[['open', 'high', 'low', 'close', 'volume']]
 
             tmp = tmp.drop_duplicates(keep=False)
 
@@ -405,7 +405,7 @@ class PatternBot(object):
 
         # LoopStart
 
-        for i in range(0,len(data_object.data_feed)):
+        for i in tqdm(range(0,len(data_object.data_feed))):
 
 
             # Get New Data and append to historical feed
@@ -435,38 +435,16 @@ class PatternBot(object):
                     trade_time = data_object.data_feed.iloc[i].name
                     entry_dates.append(trade_time)
 
-                    walk_data = data_object.historical_hour[pair][trade_time:]
+                    # Get Trade Performance
 
-                    # Calculate Stop Loss
-
-
-                    tmp_hist = data_object.historical_all[pair][:trade_time]
-
-                    atr = []
-
-                    for k in range(0,len(tmp_hist)):
-
-                        tr = np.array([tmp_hist.high[k]-tmp_hist.low[k],tmp_hist.high[k]-tmp_hist.close[k-1],tmp_hist.low[k]-tmp_hist.close[k-1]])
-                        tr = np.max(abs(tr))
-                        if k < atrs:
-
-                            atr.append(tr)
-
-                        elif k == atrs:
-
-                            atr.append(np.mean(atr))
-
-                        else:
-
-                            atr.append(((atrs-1)*atr[-1]+tr)/(atrs))
-                    atr_trade = round(10000*atr[-1])
-
-                    stop_loss = stop_loss_mod*atr_trade
-
-                    # Walk Forward Through Data
+                    look_ahead = 15 # hours
 
                     sign = -1 if patterns[1] == 'Bearish' else 1
-                    pips,exit_time = self.walk(walk_data,sign,stop=stop_loss)
+                    pips = data_object.data_feed[pair].iloc[i+look_ahead] - data_object.data_feed[pair].iloc[i]
+                    if sign == -1 and pips < 0:
+                        pips = abs(pips)
+
+                    exit_time = data_object.data_feed.iloc[i+look_ahead].name
 
                     exit_dates.append(exit_time)
                     pair_list.append(pair)
@@ -533,9 +511,11 @@ class PatternBot(object):
 
         ext_perf[0:0] = [stop_loss_mod,peak_param,pattern_err,atrs]
 
-        self.btRes = backtestResults([[stop_loss_mod,peak_param,pattern_err,atrs],
+        self.btRes = backtestResults([[peak_param,pattern_err],
                                       self.performance,self.trade_info,self.patt_info,
                                      self.pairs,self.frame,patterns_info],custom=self.custom)
+
+        print(equity[-1], self.performance)
 
         if web_up:
             #self.btRes.gen_trade_plot()
