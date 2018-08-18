@@ -1,26 +1,52 @@
-#!/software/development/Build/Anaconda3-4.4.0/envs/python-3.6/bin/python
-
-#SBATCH --job-name=FOREX Optimization Backtest
-#SBATCH --output=res.txt
+#!/software/development/Build/Anaconda3-4.4.0/envs/python-3.6/bin/python -u
+#SBATCH --output=dr.txt
 
 #
 
-#SBATCH --ntasks=81
+#SBATCH --ntasks=2
 #SBATCH --time=10:00
-#SBATCH --nodes=3
-#SBATCH --mem-per-cpu=100
+#SBATCH --nodes=2
+#SBATCH --mem-per-cpu=1G
+
+
+# MAIN SCRIPT SECTION
+# Scipt imports
 
 import os
 import sys
+import subprocess
 print(sys.version)
 sys.path.append(os.getcwd())
 
 from itertools import repeat
 from itertools import product
+import pandas as pd
+import numpy as np
+import botProto1
 from botProto1 import *
 import warnings
 import argparse
 import time
+import dispy
+import pickle
+
+# Initiate Dispy Node Server on Compute Nodes
+
+nodes = subprocess.check_output('echo $SLURM_JOB_NODELIST',shell=True)
+print(nodes)
+nodes = nodes.decode('utf-8')
+nodes = nodes[8:-2]
+nodes = [int(nodes[0]),int(nodes[-1])]
+
+print(nodes)
+
+#for i in nodes:
+
+        #os.system('srun dispynode.py --clean --daemon & &>/dev/null')
+
+os.system('srun dispynode.py --clean --daemon -d & &>/dev/null')
+
+# Command Line Arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-frame")
@@ -28,6 +54,7 @@ args = parser.parse_args()
 
 warnings.filterwarnings("ignore",category =RuntimeWarning)
 
+# Script Class
 
 class optimizer(object):
 
@@ -42,15 +69,11 @@ class optimizer(object):
         self.frame = frame
 
     def prep(self):
-        self.data = backtestData(frame=self.frame,n_split=500,pairs=['EUR_USD','GBP_USD','AUD_USD','NZD_USD'])
-        self.bot = PatternBot(data=data,instrument=pairs,pairs=['EUR_USD','GBP_USD','AUD_USD','NZD_USD'])
         #parameters = {'stop':self.stop_vals,'peak':self.peak_vals,'error':self.error_vals,'atrs':self.atrs}
         #self.grid = ParameterGrid(parameters)
         input_data = [self.stop_vals,self.peak_vals,self.error_vals,self.atrs]
         self.grid = list(product(*input_data))
         self.grid = [list(elem) for elem in self.grid]
-
-        print(len(self.grid))
 
 
     def ret_func(self,retval):
@@ -78,16 +101,38 @@ class optimizer(object):
 
         self.start = time.time()
 
-        p = multiprocessing.Pool(processes=self.n_proc)
-        print(self.n_proc)
-        results = []
+        data = botProto1.backtestData(frame=self.frame, n_split=500,
+                                           pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD'])
+        bot = botProto1.PatternBot(data=[0], instrument=[0], pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD'])
 
-        for x, y in zip(repeat(self.data),self.grid):
+        cluster = dispy.JobCluster(compute,depends=[backtestResults,backtestData,PatternBot,botProto1],)
+        print('Cluster Created')
+        jobs = []
+        id = 0
+        for x in self.grid:
+            args = [bot,data,x]
+            job = cluster.submit(args)
+            job.id = id
+            jobs.append(job)
+            id += 1
 
-            r = p.apply_async(self.bot.backtest,(x,y),callback=self.ret_func)
+        print('Backtests Beginning')
+        cluster.print_status()
 
-        p.close()
-        p.join()
+        for job in jobs:
+            results = job()
+            #results = job.result
+            output = job.stdout
+            print(results)
+
+def compute(args):
+    bot = args[0]
+    data = args[1]
+    parameters = args[2]
+    #retval = bot.backtest(data,parameters)
+    #performance = retval[1]
+
+    return 'Working'
 
 if __name__ == '__main__':
 
@@ -100,3 +145,4 @@ if __name__ == '__main__':
     opt.search()
     end_time = time.time()
     print(end_time-start_time,'seconds elapsed')
+
