@@ -63,10 +63,8 @@ class optimizer(object):
 
         self.n_proc = n_proc
         self.error_vals = [2.0,5.0,10.0]#,15.0,20.0]
-        self.stop_vals = [0.25,0.5,0.75]#,1.0,1.5,2.0]
         self.peak_vals = [5,10,15]#,20]
-        self.atrs = [5, 7, 10]#, 14, 21]
-        self.results = pd.DataFrame(columns=['stop','peak','error','atr_range','sharpe','apr','acc','exp'])
+        self.results = pd.DataFrame(columns=['peak','error','sharpe','apr','acc','exp'])
         self.frame = frame
 
     def prep(self):
