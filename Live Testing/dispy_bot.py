@@ -3,9 +3,9 @@
 
 #
 
-#SBATCH --ntasks=10
-#SBATCH --time=72:00:00
-#SBATCH --nodes=10
+#SBATCH --ntasks=2
+#SBATCH --time=48:00:00
+#SBATCH --nodes=2
 #SBATCH --mem-per-cpu=8G
 
 
@@ -44,7 +44,7 @@ import pause
 from harmonic_functions import *
 #from functionsMaster import *
 import multiprocessing
-from datetime import timedelta
+from datetime import datetime, timedelta
 import os.path
 
 # Initiate Dispy Node Server on Compute Nodes
@@ -54,7 +54,7 @@ print('*** Joker Computational Node Allocation ***')
 nodes = subprocess.check_output('echo $SLURM_JOB_NODELIST',shell=True)
 nodes = nodes.decode('utf-8')
 nodes = nodes[8:-2]
-nodes = [int(nodes[0]),int(nodes[-1])]
+#nodes = [int(nodes[0]),int(nodes[-1])]
 
 print('Joker', nodes, '\n')
 print('*** Dispy Server Startup Messages ***')
@@ -83,7 +83,7 @@ data['spread'] = 0.0002
 
 class backtestResults(object):
 
-    def __init__(self,data,custom):
+    def __init__(self,data,custom,filename=True):
 
         self.parameters = data[0]
         self.performance = data[1]
@@ -96,8 +96,10 @@ class backtestResults(object):
         self.local_base = '~/Projects/Harmonics/harmonics-1/Live\ Testing/BTData/'+self.frame+'/'
         self.server_base = '~/public_html/hedge_vps/Backtests/proto2/'+self.frame+'/'
 
-        filename = [str(i) for i in self.parameters]
-        filename = '-'.join(filename)
+        if filename==True:
+
+            filename = [str(i) for i in self.parameters]
+            filename = '-'.join(filename)
 
         self.filename = filename
 
@@ -416,10 +418,9 @@ class PatternBot(object):
 
         # Extract Parameters
 
-        stop_loss_mod = params[0]
-        peak_param = params[1]
-        pattern_err = params[2]
-        atrs = params[3]
+        peak_param = params[0]
+        pattern_err = params[1]
+        trade_period = params[2]
 
         Plot = False
 
@@ -435,6 +436,9 @@ class PatternBot(object):
         sizes = []
         patt_cnt = 0
         corr_pats = 0
+        look_ahead = 30
+        pip_hist = np.repeat(0.0, look_ahead)
+        cl = []
 
         # Get data
 
@@ -447,7 +451,7 @@ class PatternBot(object):
 
         if __name__ == '__main__':
 
-            print('Starting Initial Optimization')
+            #print('Starting Initial Optimization')
 
             dates = [self.hist_data.index[0],self.hist_data.index[-1]]
 
@@ -458,12 +462,11 @@ class PatternBot(object):
             # Get Parameters of Maximum Sharpe
 
             #print('Best Sharpe: ',performance['sharpe'][0])
-            best_params = performance['sharpe'][1]
+            best_params = performance['cum_pips'][1]
 
-            stop_loss_mod = best_params[0]
-            atrs = int(best_params[1])
-            peak_param = int(best_params[2])
-            pattern_err = best_params[3]
+            peak_param = int(best_params[0])
+            pattern_err = float(best_params[1])
+            trade_period = int(best_params[2])
 
             #print(stop_loss_mod, atrs, peak_param, pattern_err)
 
@@ -479,11 +482,11 @@ class PatternBot(object):
 
             # Do we need to re-optimize our parameters?
 
-            if (i+1)%self.train==0:
+            if (i+1)%self.test==0:
 
                 #print(i,self.train)
 
-                print('Retraining Parameters')
+                #print('Retraining Parameters')
 
                 if __name__=='__main__':
 
@@ -496,12 +499,11 @@ class PatternBot(object):
                     # Get Parameters of Maximum Sharpe
 
                     #print('Best Sharpe: ', performance['sharpe'][0])
-                    best_params = performance['sharpe'][1]
+                    best_params = performance['cum_pips'][1]
 
-                    stop_loss_mod = best_params[0]
-                    atrs = int(best_params[1])
-                    peak_param = int(best_params[2])
-                    pattern_err = int(best_params[3])
+                    peak_param = int(best_params[0])
+                    pattern_err = float(best_params[1])
+                    trade_period = int(best_params[2])
                     #print(stop_loss_mod,atrs,peak_param,pattern_err)
 
 
@@ -530,46 +532,53 @@ class PatternBot(object):
                     trade_time = data_object.data_feed.iloc[i].name
                     entry_dates.append(trade_time)
 
-                    walk_data = data_object.historical_hour[pair][trade_time:]
-
-                    # Calculate Stop Loss
-
-
-                    tmp_hist = data_object.historical_all[pair][:trade_time]
-
-                    atr = []
-
-                    for k in range(0,len(tmp_hist)):
-
-                        tr = np.array([tmp_hist.high[k]-tmp_hist.low[k],tmp_hist.high[k]-tmp_hist.close[k-1],tmp_hist.low[k]-tmp_hist.close[k-1]])
-                        tr = np.max(abs(tr))
-                        if k < atrs:
-
-                            atr.append(tr)
-
-                        elif k == atrs:
-
-                            atr.append(np.mean(atr))
-
-                        else:
-
-                            atr.append(((atrs-1)*atr[-1]+tr)/(atrs))
-                    atr_trade = round(10000*atr[-1])
-
-                    stop_loss = stop_loss_mod*atr_trade
-                    stop_list.append(stop_loss)
-
-                    # Walk Forward Through Data
-
-                    is_uj = pair == 'USD_JPY'
+                    # Get Trade Performance
 
                     sign = -1 if patterns[1] == 'Bearish' else 1
-                    pips,exit_time = self.walk(walk_data,sign,stop=stop_loss)
+                    if len(data_object.data_feed) > i + trade_period:
+
+                        if sign == 1:
+                            pips = data_object.data_feed[pair].iloc[i + trade_period] - data_object.data_feed[pair].iloc[i]
+                        else:
+                            pips = data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[i + trade_period]
+
+                        exit_time = data_object.data_feed.iloc[i + trade_period].name
+
+                    else:
+                        if sign == 1:
+                            pips = data_object.data_feed[pair].iloc[-1] - data_object.data_feed[pair].iloc[i]
+                        else:
+                            pips = data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[-1]
+
+                        exit_time = data_object.data_feed.iloc[-1].name
+
+
+                    if len(data_object.data_feed) > i + look_ahead:
+                        if sign == 1:
+                            pip_hist += data_object.data_feed[pair].iloc[i:i + look_ahead].values - \
+                                        data_object.data_feed[pair].iloc[i]
+                        elif sign == -1:
+                            pip_hist += data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[
+                                                                              i:i + look_ahead].values
+
+                    # Get indicators
+
+                    # patt_index = data_object.historical_all[pair].index.get_loc(trade_time)
+
+                    # s = get_indicators(data_object.historical_all[pair].iloc[patt_index - 100:patt_index + 1],
+                    # trade_time)
+
+                    # indicators = indicators.append(s.T)
+
+                    if sign == 1:
+                        cl.append(0 if pips > 0 else 1)
+                    else:
+                        cl.append(2 if pips > 0 else 3)
 
                     exit_dates.append(exit_time)
                     pair_list.append(pair)
 
-                    pnl = np.append(pnl,pips)
+                    pnl = np.append(pnl, pips)
 
                     # Append Pattern Info
 
@@ -627,15 +636,16 @@ class PatternBot(object):
 
         self.performance = self.get_performance(self.trade_info,[start_seconds,end_seconds,patt_cnt,corr_pats])
 
+
         self.patt_info = [patt_cnt,corr_pats,pair_pos,pair_neg]
 
         ext_perf = self.performance.copy()
 
-        ext_perf[0:0] = [stop_loss_mod,peak_param,pattern_err,atrs]
+        ext_perf[0:0] = [peak_param,pattern_err]
 
-        self.btRes = backtestResults([[stop_loss_mod,peak_param,pattern_err,atrs],
+        self.btRes = backtestResults([[peak_param,pattern_err],
                                       self.performance,self.trade_info,self.patt_info,
-                                     self.pairs,self.frame,patterns_info],custom=self.custom)
+                                     self.pairs,self.frame,patterns_info],custom=self.custom, filename=str(self.train)+'-'+str(self.test))
 
         if web_up:
             #self.btRes.gen_trade_plot()
@@ -644,11 +654,11 @@ class PatternBot(object):
 
         if __name__=='__main__':
 
-            print('Generating Plot')
+            #print('Generating Plot')
             self.btRes.gen_plot()
             self.trade_info.to_csv('BTResults.csv')
 
-        return self.trade_info,ext_perf
+        return [peak_param, pattern_err, pip_hist.max(), pip_hist.argmax(), self.performance]
 
     def pnl2equity(self,pnl,sizes,pair_list,quote_list,stop_list,dates,equity):
 
@@ -669,8 +679,6 @@ class PatternBot(object):
 
                 ind = entry_dates.index(total_dates[i])
 
-                print(current_eq)
-
                 cost = current_eq*self.perRisk/100.0
 
                 # Determine Trade Profit
@@ -680,7 +688,7 @@ class PatternBot(object):
                 flip = pair_list[ind][:3] == 'USD'
                 quote = quote_list[ind]
 
-                position = posSizeBT(current_eq,quote,self.perRisk, stop_list[ind],flip=flip,u_j=u_j)
+                position = posSizeBT(current_eq, self.perRisk, 20)
 
                 # Update Current Equity
 
@@ -1064,18 +1072,17 @@ class optimizer(object):
     def __init__(self,n_proc,frame,dates):
 
         self.n_proc = n_proc
-        self.error_vals = [5.0, 10.0, 15.0, 20.0, 30.0]
-        self.stop_vals = [0.75,1.0,1.5,2,2.5]
+        self.error_vals = [5.0,10.0,15.0,20.0,25.0,30.0]
         self.peak_vals = [5,10,15,20]
-        self.atrs = [5, 7, 10, 14, 21]
-        self.results = pd.DataFrame(columns=['stop','peak','error','atr_range','sharpe','apr','acc','exp'])
+        self.trade_periods = [10]
+        self.results = pd.DataFrame(columns=['peak', 'error', 'cum_pips', 'period'])
         self.frame = frame
         self.dates = dates
 
     def prep(self):
         #parameters = {'stop':self.stop_vals,'peak':self.peak_vals,'error':self.error_vals,'atrs':self.atrs}
         #self.grid = ParameterGrid(parameters)
-        input_data = [self.stop_vals,self.peak_vals,self.error_vals,self.atrs]
+        input_data = [self.peak_vals, self.error_vals, self.trade_periods]
         self.grid = list(product(*input_data))
         self.grid = [list(elem) for elem in self.grid]
 
@@ -1091,7 +1098,7 @@ class optimizer(object):
 
     def search(self):
 
-        data = botProto1.backtestData(frame=self.frame, n_split=200,
+        data = botProto1.backtestData(frame=self.frame, n_split=300,
                                       pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD'], dates = self.dates)
         bot = botProto1.PatternBot(data=[0], instrument=[0], pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD'])
 
@@ -1103,35 +1110,28 @@ class optimizer(object):
         for x in self.grid:
             args = [bot, data, x]
             job = cluster.submit(args)
-            job.id = id
+            job.id = x
             jobs.append(job)
             id += 1
 
         for job in jobs:
             retval = job()
-            #print(job.exception)
-            retval = retval[0:8]
+            if job.exception != None:
+                print(job.exception)
 
             self.results = self.results.append(
-                {'stop': retval[0], 'peak': retval[1], 'error': retval[2], 'atr_range': retval[3], 'sharpe': retval[4],
-                 'apr': retval[5], 'acc': retval[6], 'exp': retval[7]}, ignore_index=True)
+                {'peak': retval[0], 'error': retval[1], 'cum_pips': retval[2], 'period': retval[3]}, ignore_index=True)
 
         #cluster.print_status()
         cluster.close()
 
         # Get Best Performance
 
-        sharpe_idx = self.results.sharpe.idxmax()
-        apr_idx = self.results.apr.idxmax()
-        acc_idx = self.results.acc.idxmax()
-        exp_idx = self.results.exp.idxmax()
+        pips_idx = self.results.cum_pips.idxmax()
 
-        tmp = self.results[['stop','atr_range','peak','error']]
+        tmp = self.results[['peak','error','period']]
 
-        performance = {'sharpe':[self.results.sharpe.max(),tmp.iloc[sharpe_idx].values],
-                       'apr':[self.results.apr.max(),tmp.iloc[apr_idx].values],
-                       'acc':[self.results.acc.max(),tmp.iloc[acc_idx].values],
-                       'exp':[self.results.exp.max(),tmp.iloc[exp_idx].values]}
+        performance = {'cum_pips':[self.results.cum_pips.max(),tmp.iloc[pips_idx].values]}
 
         return performance
 
@@ -1141,9 +1141,8 @@ def compute(args):
     data = args[1]
     parameters = args[2]
     retval = bot.backtest(data,parameters,web_up=False)
-    performance = retval[1]
 
-    return performance
+    return retval
 
 
 if __name__ == '__main__':
@@ -1170,9 +1169,9 @@ if __name__ == '__main__':
     pairs = args.pairs
     parameters = args.parameters
     risk = args.risk
-    parameters[0] = float(parameters[0])
-    parameters[1] = int(parameters[1])
-    parameters[2] = float(parameters[2])
+    parameters[0] = int(parameters[0])
+    parameters[1] = float(parameters[1])
+    parameters[2] = int(parameters[2])
     risk = float(risk)
 
     #print(dates)
@@ -1181,8 +1180,8 @@ if __name__ == '__main__':
     #print(pairs)
     #print(risk)
 
-    training_windows = [1000, 2500, 5000, 7500, 10000, 12500, 15000]
-    testing_windows = [1000, 2000, 3000, 4000, 5000, 6000, 7000]
+    training_windows = [2500, 5000, 7500, 10000]
+    testing_windows = [500, 750, 1000, 1500, 2000, 3000, 4000]
 
     input_windows = [training_windows, testing_windows]
     windows = np.array(list((product(*input_windows))))
@@ -1200,12 +1199,11 @@ if __name__ == '__main__':
         test = i[1]
         data = backtestData(n_split=train,pairs=pairs,frame=frame,dates=dates)
         bot = PatternBot(data=data,risk=risk,pairs=pairs,custom=True if frame=='Custom' else False,instrument='test',train=train,test=test)
-        info,params=bot.backtest(data,parameters,web_up=False)
-        perf = params[0:8]
+        peak_param, pattern_error, cum_pips, period, perf=bot.backtest(data,parameters,web_up=False)
 
         performance_res = performance_res.append(
-            {'train': train, 'test': test, 'sharpe': perf[4],
-             'apr': perf[5], 'acc': perf[6], 'exp': perf[7]}, ignore_index=True)
+            {'train': train, 'test': test, 'sharpe': perf[0],
+             'apr': perf[1], 'acc': perf[2], 'exp': perf[3]}, ignore_index=True)
 
         percent = 100 * float(len(performance_res)) / float(len(windows))
 
@@ -1218,6 +1216,15 @@ if __name__ == '__main__':
         print(round(percent), '% ', '[Sharpe APR ACC EXP] = [', round(performance_res.sharpe.max(), 2),
               round(performance_res.apr.max(), 2),
               round(performance_res.acc.max(), 2), round(performance_res.exp.max(), 2), ']')
-        print('Elapsed: ', round(elapsed), 'Remaining: ', round(remaining))
+
+        sec_rem = timedelta(seconds=remaining)
+        sec_elap = timedelta(seconds=elapsed)
+
+        de = datetime(1,1,1)+sec_elap
+        dr = datetime(1,1,1)+sec_rem
+
+        print("Elapsed - %d Days, %d Hours, %d Minutes, %d Seconds" % (de.day-1, de.hour, de.minute, de.second))
+        print("Remaining - %d Days, %d Hours, %d Minutes, %d Seconds" % (dr.day-1, dr.hour, dr.minute, dr.second))
+
 
         performance_res.to_csv('training_frame_results.csv')

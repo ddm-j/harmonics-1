@@ -62,15 +62,16 @@ class optimizer(object):
     def __init__(self,n_proc,frame):
 
         self.n_proc = n_proc
-        self.error_vals = [2.0,5.0,10.0]#,15.0,20.0]
-        self.peak_vals = [5,10,15]#,20]
-        self.results = pd.DataFrame(columns=['peak','error','sharpe','apr','acc','exp'])
+        self.error_vals = [2.0,5.0,10.0,15.0,20.0,25.0,30.0,35.0]
+        self.peak_vals = [5,10,15,20,25,30,35]
+        self.trade_periods = [10]
+        self.results = pd.DataFrame(columns=['peak','error','cum_pips','period'])
         self.frame = frame
 
     def prep(self):
         #parameters = {'stop':self.stop_vals,'peak':self.peak_vals,'error':self.error_vals,'atrs':self.atrs}
         #self.grid = ParameterGrid(parameters)
-        input_data = [self.stop_vals,self.peak_vals,self.error_vals,self.atrs]
+        input_data = [self.peak_vals,self.error_vals,self.trade_periods]
         self.grid = list(product(*input_data))
         self.grid = [list(elem) for elem in self.grid]
 
@@ -123,15 +124,17 @@ class optimizer(object):
 
         for job in jobs:
             retval = job()
-            retval = retval[0:8]
+            print(job.exception)
 
             self.results = self.results.append(
-                {'stop': retval[0], 'peak': retval[1], 'error': retval[2], 'atr_range': retval[3], 'sharpe': retval[4],
-                 'apr': retval[5], 'acc': retval[6], 'exp': retval[7]}, ignore_index=True)
+                {'peak': retval[0], 'error': retval[1], 'cum_pips':retval[2], 'period':retval[3]}, ignore_index=True)
 
-        print('[Sharpe APR ACC EXP] = [', round(self.results.sharpe.max(), 2),
-              round(self.results.apr.max(), 2),
-              round(self.results.acc.max(), 2), round(self.results.exp.max(), 2), ']')
+            p = 100*float(len(self.results))/float(len(self.grid))
+
+            print(p,'% Completion')
+
+        idx = self.results.cum_pips.idxmax()
+        print(self.results.iloc[idx])
 
 
 
@@ -140,9 +143,8 @@ def compute(args):
     data = args[1]
     parameters = args[2]
     retval = bot.backtest(data,parameters,web_up=False)
-    performance = retval[1]
 
-    return performance
+    return retval
 
 if __name__ == '__main__':
 

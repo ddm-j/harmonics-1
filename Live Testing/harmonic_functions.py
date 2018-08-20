@@ -244,15 +244,17 @@ def peak_detect(price,peak_range=5):
 
 # Position Sizing Function
 
-def posSizeBT(accountBalance,quote,percentageRisk,pipRisk,flip=False,u_j=False):
+def posSize(accountBalance,percentageRisk,pipRisk,rate):
 
-    pip_size = 100 if u_j else 10000
+    if rate > 0:
+
+        rate = 1/rate
 
     trade = (percentageRisk/100)*accountBalance
 
-    pipval = (trade/pipRisk)/quote if flip else trade/pipRisk
+    pipval = trade/pipRisk
 
-    size = pipval*pip_size # 10000 units / (1$/pip)
+    size = pipval*10000
 
     return size
 
@@ -314,16 +316,12 @@ def resampler(price,timeframe='M',length=30):
 
 # Position Sizing Function
 
-def posSize(accountBalance,percentageRisk,pipRisk,rate):
-
-    if rate > 0:
-
-        rate = 1/rate
+def posSizeBT(accountBalance,percentageRisk,pipRisk):
 
     trade = (percentageRisk/100)*accountBalance
 
     pipval = trade/pipRisk
 
-    size = pipval*10000
+    size = pipval*10000 # 10000 units / (1$/pip)
 
     return size

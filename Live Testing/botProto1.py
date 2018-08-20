@@ -364,10 +364,9 @@ class PatternBot(object):
 
         # Extract Parameters
 
-        stop_loss_mod = params[0]
-        peak_param = params[1]
-        pattern_err = params[2]
-        atrs = params[3]
+        peak_param = params[0]
+        pattern_err = params[1]
+        trade_period = params[2]
 
         Plot = False
 
@@ -379,6 +378,9 @@ class PatternBot(object):
         stop_list = []
         entry_dates = []
         exit_dates = []
+        look_ahead = 30
+        pip_hist = np.repeat(0.0, look_ahead)
+        cl = []
         sizes = []
         patt_cnt = 0
         corr_pats = 0
@@ -424,46 +426,48 @@ class PatternBot(object):
                     trade_time = data_object.data_feed.iloc[i].name
                     entry_dates.append(trade_time)
 
-                    walk_data = data_object.historical_hour[pair][trade_time:]
-
-                    # Calculate Stop Loss
-
-
-                    tmp_hist = data_object.historical_all[pair][:trade_time]
-
-                    atr = []
-
-                    for k in range(0,len(tmp_hist)):
-
-                        tr = np.array([tmp_hist.high[k]-tmp_hist.low[k],tmp_hist.high[k]-tmp_hist.close[k-1],tmp_hist.low[k]-tmp_hist.close[k-1]])
-                        tr = np.max(abs(tr))
-                        if k < atrs:
-
-                            atr.append(tr)
-
-                        elif k == atrs:
-
-                            atr.append(np.mean(atr))
-
-                        else:
-
-                            atr.append(((atrs-1)*atr[-1]+tr)/(atrs))
-                    atr_trade = round(10000*atr[-1])
-
-                    stop_loss = stop_loss_mod*atr_trade
-                    stop_list.append(stop_loss)
-
-                    # Walk Forward Through Data
-
-                    is_uj = pair == 'USD_JPY'
+                    # Get Trade Performance
 
                     sign = -1 if patterns[1] == 'Bearish' else 1
-                    pips,exit_time = self.walk(walk_data,sign,stop=stop_loss,u_j=is_uj)
+                    if len(data_object.data_feed) > i + trade_period:
+                        pips = data_object.data_feed[pair].iloc[i + trade_period] - data_object.data_feed[pair].iloc[i]
+                        exit_time = data_object.data_feed.iloc[i + trade_period].name
+
+                    else:
+                        pips = data_object.data_feed[pair].iloc[-1] - data_object.data_feed[pair].iloc[i]
+                        exit_time = data_object.data_feed.iloc[-1].name
+
+                    if sign == -1 and pips < 0:
+                        pips = abs(pips)
+                    elif sign == -1 and pips > 0:
+                        pips = -pips
+
+                    if len(data_object.data_feed) > i + look_ahead:
+                        if sign == 1:
+                            pip_hist += data_object.data_feed[pair].iloc[i:i + look_ahead].values - \
+                                        data_object.data_feed[pair].iloc[i]
+                        elif sign == -1:
+                            pip_hist += data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[
+                                                                              i:i + look_ahead].values
+
+                    # Get indicators
+
+                    #patt_index = data_object.historical_all[pair].index.get_loc(trade_time)
+
+                    #s = get_indicators(data_object.historical_all[pair].iloc[patt_index - 100:patt_index + 1],
+                                       #trade_time)
+
+                    #indicators = indicators.append(s.T)
+
+                    if sign == 1:
+                        cl.append(0 if pips > 0 else 1)
+                    else:
+                        cl.append(2 if pips > 0 else 3)
 
                     exit_dates.append(exit_time)
                     pair_list.append(pair)
 
-                    pnl = np.append(pnl,pips)
+                    pnl = np.append(pnl, pips)
 
                     # Append Pattern Info
 
@@ -523,9 +527,9 @@ class PatternBot(object):
 
         ext_perf = self.performance.copy()
 
-        ext_perf[0:0] = [stop_loss_mod,peak_param,pattern_err,atrs]
+        ext_perf[0:0] = [peak_param,pattern_err]
 
-        self.btRes = backtestResults([[stop_loss_mod,peak_param,pattern_err,atrs],
+        self.btRes = backtestResults([[peak_param,pattern_err],
                                       self.performance,self.trade_info,self.patt_info,
                                      self.pairs,self.frame,patterns_info],custom=self.custom)
 
@@ -534,7 +538,8 @@ class PatternBot(object):
             self.btRes.gen_plot()
             #self.btRes.push2web()
 
-        return self.trade_info,ext_perf
+
+        return [peak_param, pattern_err, pip_hist.max(), pip_hist.argmax()]
 
 
     def pnl2equity(self,pnl,sizes,pair_list,quote_list,stop_list,dates,equity):
@@ -567,7 +572,7 @@ class PatternBot(object):
                 flip = pair_list[ind][:3] == 'USD'
                 quote = quote_list[ind]
 
-                position = posSizeBT(current_eq,quote,self.perRisk, stop_list[ind],flip=flip,u_j=u_j)
+                position = posSizeBT(current_eq, self.perRisk, 20)
 
                 # Update Current Equity
 
