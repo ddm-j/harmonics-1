@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import argrelextrema
+from scipy.signal import argrelextrema, argrelmax, argrelmin
 
 def is_gartley(moves,err_allowed):
 
@@ -18,32 +18,11 @@ def is_gartley(moves,err_allowed):
 
     CD_ret = np.array([1.27 - err_allowed, 1.618 + err_allowed]) * abs(BC)
 
+    if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
 
-    if XA > 0 and AB < 0 and BC > 0 and CD < 0:
-
-        # Bullish Gartley
-
-        if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return 1
-
-        else:
-            return np.NAN
-
-    elif XA < 0 and AB > 0 and BC < 0 and CD > 0:
-
-        # Bearish Gartley
-
-        if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return -1
-
-        else:
-            return np.NAN
-
+        return 1 if XA > 0 else -1
 
     else:
-
         return np.NAN
 
 
@@ -62,29 +41,9 @@ def is_butterfly(moves,err_allowed):
 
     CD_ret = np.array([1.618 - err_allowed, 2.618 + err_allowed]) * abs(BC)
 
-    if XA > 0 and AB < 0 and BC > 0 and CD < 0:
+    if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
 
-        # Bullish Butterfly
-
-        if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return 1
-
-        else:
-
-            return np.NAN
-
-    elif XA < 0 and AB > 0 and BC < 0 and CD > 0:
-
-        # Bearish Butterfly
-
-        if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return -1
-
-        else:
-
-            return np.NAN
+        return 1 if XA > 0 else -1
 
     else:
 
@@ -106,30 +65,9 @@ def is_bat(moves,err_allowed):
 
     CD_ret = np.array([161.8/100 - err_allowed, 261.8/100 + err_allowed]) * abs(BC)
 
+    if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
 
-    if XA > 0 and AB < 0 and BC > 0 and CD < 0:
-
-        # Bullish Butterfly
-
-        if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return 1
-
-        else:
-
-            return np.NAN
-
-    elif XA < 0 and AB > 0 and BC < 0 and CD > 0:
-
-        # Bearish Butterfly
-
-        if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return -1
-
-        else:
-
-            return np.NAN
+        return 1 if XA > 0 else -1
 
     else:
 
@@ -151,29 +89,9 @@ def is_crab(moves,err_allowed):
 
     CD_ret = np.array([224.0 / 100 - err_allowed, 361.8 / 100 + err_allowed]) * abs(BC)
 
-    if XA > 0 and AB < 0 and BC > 0 and CD < 0:
+    if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
 
-        # Bullish Butterfly
-
-        if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return 1
-
-        else:
-
-            return np.NAN
-
-    elif XA < 0 and AB > 0 and BC < 0 and CD > 0:
-
-        # Bearish Butterfly
-
-        if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return -1
-
-        else:
-
-            return np.NAN
+        return 1 if XA > 0 else -1
 
     else:
 
@@ -193,34 +111,14 @@ def is_shark(moves,err_allowed):
 
     CD_ret = np.array([161.8 / 100 - err_allowed, 224.0 / 100 + err_allowed]) * abs(AB)
 
-    if XA > 0 and AB < 0 and BC > 0 and CD < 0:
 
-        # Bullish Butterfly
+    if BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
 
-        if BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return 1
-
-        else:
-
-            return np.NAN
-
-    elif XA < 0 and AB > 0 and BC < 0 and CD > 0:
-
-        # Bearish Butterfly
-
-        if BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-            return -1
-
-        else:
-
-            return np.NAN
+        return 1 if XA > 0 else -1
 
     else:
 
         return np.NAN
-
 
 
 def peak_detect(price,peak_range=5):
