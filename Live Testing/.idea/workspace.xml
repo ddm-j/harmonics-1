@@ -1,22 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/parameter_optimization.py" line="90" />
-  </component>
   <component name="ChangeListManager">
     <list default="true" id="10f51c30-fcc5-4f22-bbf9-8ecf52619545" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/BTData/5year/0.75-20-5-21/0.75-20-5-21.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BTData/5year/1.0-5-10-7/1.0-5-10-7.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BTData/5year/1.5-20-10-21/1.5-20-10-21.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BTData/5year/1.5-20-15-10/1.5-20-15-10.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BTData/5year/1.5-20-15-5/1.5-20-15-5.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BTData/5year/1.5-5-10-5/1.5-5-10-5.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Live Testing.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Live Testing.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/10000-500/10000-500.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/10000-750/10000-750.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/2500-1000/2500-1000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/2500-1500/2500-1500.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/2500-2000/2500-2000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/2500-500/2500-500.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/2500-750/2500-750.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/5000-1000/5000-1000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/5000-1500/5000-1500.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/5000-2000/5000-2000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/5000-3000/5000-3000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/5000-4000/5000-4000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/5000-500/5000-500.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/5000-750/5000-750.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/7500-1000/7500-1000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/7500-1500/7500-1500.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/7500-2000/7500-2000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/7500-3000/7500-3000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/7500-4000/7500-4000.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/7500-500/7500-500.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BTData/5year/7500-750/7500-750.html" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/BTResults.csv" beforeDir="false" afterPath="$PROJECT_DIR$/BTResults.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_dispy_20180819121359.bak" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_dispy_20180819121359.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_dispy_20180819121359.dir" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/botProto1.py" beforeDir="false" afterPath="$PROJECT_DIR$/botProto1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dispy_bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/dispy_bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispy_opt.py" beforeDir="false" afterPath="$PROJECT_DIR$/dispy_opt.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/dr.txt" beforeDir="false" afterPath="$PROJECT_DIR$/dr.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/harmonic_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/harmonic_functions.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/run_job.sh" beforeDir="false" afterPath="$PROJECT_DIR$/run_job.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/training_frame_results.csv" beforeDir="false" afterPath="$PROJECT_DIR$/training_frame_results.csv" afterDir="false" />
     </list>
@@ -26,6 +42,9 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/Live_Testing$botProto1.coverage" NAME="botProto1 Coverage Results" MODIFIED="1534807223292" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
   </component>
@@ -33,17 +52,20 @@
     <session id="540527245">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="4" />
+          <entry key="project.closed" value="5" />
           <entry key="project.open.time.13" value="1" />
           <entry key="project.open.time.14" value="1" />
+          <entry key="project.open.time.2" value="1" />
           <entry key="project.open.time.3" value="1" />
           <entry key="project.open.time.4" value="2" />
-          <entry key="project.opened" value="5" />
+          <entry key="project.open.time.5" value="1" />
+          <entry key="project.open.time.53" value="1" />
+          <entry key="project.opened" value="8" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="3" />
+          <entry key="py" value="4" />
           <entry key="sql" value="1" />
           <entry key="txt" value="3" />
         </counts>
@@ -51,18 +73,18 @@
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="PLAIN_TEXT" value="3" />
-          <entry key="Python" value="3" />
+          <entry key="Python" value="4" />
           <entry key="Scratch" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="2137" />
+          <entry key="py" value="4420" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="2137" />
+          <entry key="Python" value="4420" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.js.language.service.starts" />
@@ -73,8 +95,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch_1.sql">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="486">
-              <caret line="27" column="33" selection-start-line="27" selection-start-column="33" selection-end-line="27" selection-end-column="33" />
+            <state relative-caret-position="216">
+              <caret line="12" selection-start-line="12" selection-end-line="12" />
             </state>
           </provider>
         </entry>
@@ -82,8 +104,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/dispy_bot.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="326">
-              <caret line="1182" column="24" selection-start-line="1182" selection-start-column="24" selection-end-line="1182" selection-end-column="24" />
+            <state relative-caret-position="205">
+              <caret line="1204" column="33" selection-start-line="1204" selection-start-column="33" selection-end-line="1204" selection-end-column="33" />
             </state>
           </provider>
         </entry>
@@ -99,36 +121,36 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>2.38</find>
-      <find>2.37</find>
-      <find>2.41</find>
-      <find>2.42</find>
-      <find>2.23</find>
-      <find>rm -r</find>
-      <find>possizeBT</find>
-      <find>pair_list</find>
-      <find>self.api</find>
-      <find>self.API</find>
-      <find>indicators</find>
-      <find>posSize</find>
-      <find>pos</find>
-      <find>best_params</find>
-      <find>n_split</find>
-      <find>pnl</find>
-      <find>possize</find>
-      <find>print(equity</find>
-      <find>equity</find>
-      <find>pnl2equity</find>
-      <find>print</find>
-      <find>trade_info</find>
-      <find>exception</find>
-      <find>print(pnl</find>
-      <find>np.log</find>
-      <find>if __name</find>
-      <find>trade_period</find>
-      <find>best_</find>
-      <find>backtestResults</find>
       <find>elif</find>
+      <find>self.loop_check</find>
+      <find>xticks</find>
+      <find>pip_hist +=</find>
+      <find>loop_ch</find>
+      <find>pip_hist</find>
+      <find>compute</find>
+      <find>cum_pips</find>
+      <find>best_params</find>
+      <find>params_dict</find>
+      <find>_pips</find>
+      <find>plt.plot</find>
+      <find>_pip</find>
+      <find>plt.</find>
+      <find>import bot</find>
+      <find>return [</find>
+      <find>plt.bar</find>
+      <find>.update</find>
+      <find>float(par</find>
+      <find>params</find>
+      <find>loop_check</find>
+      <find>trade_period</find>
+      <find>initialize</find>
+      <find>self.performance</find>
+      <find>depends</find>
+      <find>max_dd</find>
+      <find>=bot.b</find>
+      <find>bot.backtest</find>
+      <find>retrain</find>
+      <find>try:</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -147,9 +169,9 @@
         <option value="$USER_HOME$/.local/lib/python3.5/site-packages/csvtotable/templates/template.j2" />
         <option value="$PROJECT_DIR$/OptimizationResults-1year.csv" />
         <option value="$PROJECT_DIR$/parameter_optimization.py" />
-        <option value="$PROJECT_DIR$/botProto1.py" />
         <option value="$PROJECT_DIR$/harmonic_functions.py" />
         <option value="$PROJECT_DIR$/dispy_opt.py" />
+        <option value="$PROJECT_DIR$/botProto1.py" />
         <option value="$PROJECT_DIR$/dispy_bot.py" />
       </list>
     </option>
@@ -172,6 +194,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -183,7 +206,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -204,7 +226,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.dash_test">
+  <component name="RunManager" selected="Python.botProto1">
     <configuration default="true" type="tests" factoryName="Attests">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -260,7 +282,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/botProto1.py" />
-      <option name="PARAMETERS" value="" />
+      <option name="PARAMETERS" value="-frame 1year -pairs EUR_USD GBP_USD NZD_USD AUD_USD -parameters 20 30 15 --risk 1" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -342,8 +364,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.dash_test" />
         <item itemvalue="Python.botProto1" />
+        <item itemvalue="Python.dash_test" />
         <item itemvalue="Python.parameter_optimization" />
         <item itemvalue="Python.optimization_analysis" />
       </list>
@@ -420,15 +442,15 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="65" y="-4" width="1301" height="772" extended-state="6" />
+    <frame x="64" y="-11" width="1303" height="780" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19521913" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.20478088" />
       <window_info id="Structure" order="1" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.17040358" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.27018633" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -439,12 +461,13 @@
       <window_info anchor="bottom" id="Python Console" order="10" />
       <window_info anchor="bottom" id="Docker" order="11" show_stripe_button="false" />
       <window_info anchor="bottom" id="Database Changes" order="12" show_stripe_button="false" />
+      <window_info anchor="bottom" id="File Transfer" order="13" weight="0.32919255" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Remote Host" order="3" />
       <window_info anchor="right" id="Database" order="4" />
-      <window_info anchor="right" id="SciView" order="5" />
+      <window_info anchor="right" id="SciView" order="5" visible="true" weight="0.05816733" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -531,13 +554,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/botProto1.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7488">
-          <caret line="430" selection-start-line="430" selection-end-line="451" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/dispy_opt.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2484">
@@ -545,27 +561,31 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch_1.sql">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="486">
-          <caret line="27" column="33" selection-start-line="27" selection-start-column="33" selection-end-line="27" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/harmonic_functions.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="5832">
           <caret line="327" selection-start-line="327" selection-end-line="327" />
-          <folding>
-            <element signature="e#0#19#0" expanded="true" />
-          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/botProto1.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="111">
+          <caret line="715" column="12" selection-start-line="715" selection-start-column="12" selection-end-line="715" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch_1.sql">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="216">
+          <caret line="12" selection-start-line="12" selection-end-line="12" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/dispy_bot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="326">
-          <caret line="1182" column="24" selection-start-line="1182" selection-start-column="24" selection-end-line="1182" selection-end-column="24" />
+        <state relative-caret-position="205">
+          <caret line="1204" column="33" selection-start-line="1204" selection-start-column="33" selection-end-line="1204" selection-end-column="33" />
         </state>
       </provider>
     </entry>

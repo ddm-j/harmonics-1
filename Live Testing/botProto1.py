@@ -364,9 +364,11 @@ class PatternBot(object):
 
         # Extract Parameters
 
-        peak_param = params[0]
-        pattern_err = params[1]
-        trade_period = params[2]
+        params_dict = {'EUR_USD':params,'GBP_USD':params,'AUD_USD':params,'NZD_USD':params}
+        params_dict['EUR_USD'][-1] = 19
+        params_dict['GBP_USD'][-1] = 26
+        params_dict['NZD_USD'][-1] = 29
+        params_dict['AUD_USD'][-1] = 9
 
         Plot = False
 
@@ -379,7 +381,9 @@ class PatternBot(object):
         entry_dates = []
         exit_dates = []
         look_ahead = 30
-        pip_hist = np.repeat(0.0, look_ahead)
+        empty_lists = np.repeat(0.0,look_ahead)
+        pip_hist = {'EUR_USD':empty_lists.copy(),'GBP_USD':empty_lists.copy(),'NZD_USD':empty_lists.copy(),
+                    'AUD_USD': empty_lists.copy()}
         cl = []
         sizes = []
         patt_cnt = 0
@@ -394,7 +398,7 @@ class PatternBot(object):
 
         # LoopStart
 
-        for i in range(0,len(data_object.data_feed)):
+        for i in tqdm(range(0,len(data_object.data_feed))):
 
 
             # Get New Data and append to historical feed
@@ -403,7 +407,7 @@ class PatternBot(object):
 
             # Check for Patterns!
 
-            results_dict = self.loop_check(pattern_err,peak_param)
+            results_dict = self.loop_check(params_dict)
 
             if results_dict == None:
                 continue
@@ -411,6 +415,13 @@ class PatternBot(object):
             for j in results_dict:
                 pair = j
                 patterns = results_dict[j]
+
+                # Determine Parameters Based on Pair
+
+                peak_param = params_dict[pair][0]
+                pattern_err = params_dict[pair][1]
+                trade_period = params_dict[pair][2]
+
 
                 if patterns != None and patterns[-1][0] != last_patt_start and data_object.data_feed.iloc[i].name != last_trade_time:
 
@@ -444,10 +455,11 @@ class PatternBot(object):
 
                     if len(data_object.data_feed) > i + look_ahead:
                         if sign == 1:
-                            pip_hist += data_object.data_feed[pair].iloc[i:i + look_ahead].values - \
+                            pip_hist[pair] += data_object.data_feed[pair].iloc[i:i + look_ahead].values - \
                                         data_object.data_feed[pair].iloc[i]
+
                         elif sign == -1:
-                            pip_hist += data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[
+                            pip_hist[pair] += data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[
                                                                               i:i + look_ahead].values
 
                     # Get indicators
@@ -511,9 +523,20 @@ class PatternBot(object):
                         plt.show()
 
         risk = self.perRisk
+
         equity = [1000]
 
         equity = self.pnl2equity(pnl,sizes,pair_list,quote_list,stop_list,[data_object.historical_all[self.pairs[0]].index.tolist(),entry_dates,exit_dates],equity)
+
+        if False:
+            for i in self.pairs:
+
+                plt.bar(np.arange(1,look_ahead+1),pip_hist[i])
+                plt.title(i)
+                plt.show()
+
+            plt.plot(equity)
+            plt.show()
 
         self.trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
                                    'pnl':pnl,'equity':equity[1:]})
@@ -538,8 +561,13 @@ class PatternBot(object):
             self.btRes.gen_plot()
             #self.btRes.push2web()
 
+        pip_res = {'EUR_USD': [pip_hist['EUR_USD'].max(), pip_hist['EUR_USD'].argmax()],
+                   'GBP_USD': [pip_hist['GBP_USD'].max(), pip_hist['GBP_USD'].argmax()],
+                   'AUD_USD': [pip_hist['AUD_USD'].max(), pip_hist['AUD_USD'].argmax()],
+                   'NZD_USD': [pip_hist['NZD_USD'].max(), pip_hist['NZD_USD'].argmax()]}
 
-        return [peak_param, pattern_err, pip_hist.max(), pip_hist.argmax()]
+
+        return [peak_param, pattern_err, pip_res, self.performance]
 
 
     def pnl2equity(self,pnl,sizes,pair_list,quote_list,stop_list,dates,equity):
@@ -684,9 +712,15 @@ class PatternBot(object):
         """Assumes returns is a pandas Series"""
         r = returns.add(1).cumprod()
         dd = r.div(r.cummax()).sub(1)
-        mdd = dd.min()
-        end = dd.idxmin()
-        start = r.loc[:end].idxmax()
+
+        try:
+            mdd = dd.min()
+            end = dd.idxmin()
+            start = r.loc[:end].idxmax()
+        except:
+            mdd = 0
+            start = 0
+            end = 0
         return mdd, start, end
 
     def walk(self, data, sign, stop=10, u_j=False):
@@ -853,11 +887,14 @@ class PatternBot(object):
             return None
 
 
-    def loop_check(self,patt_err,range):
+    def loop_check(self,params):
 
         results = {}
 
         for i in self.pairs:
+
+            patt_err = params[i][1]
+            range = params[i][0]
 
             pattern = self.check_pattern(self.hist_data[i],err_allowed=patt_err,range_param=range)
 
@@ -977,10 +1014,9 @@ if __name__ == '__main__':
     pairs = args.pairs
     parameters = args.parameters
     risk = args.risk
-    parameters[0] = float(parameters[0])
-    parameters[1] = int(parameters[1])
-    parameters[2] = float(parameters[2])
-    parameters[3] = int(parameters[3])
+    parameters[0] = int(parameters[0])
+    parameters[1] = float(parameters[1])
+    parameters[2] = int(parameters[2])
     risk = float(risk) 
 
 

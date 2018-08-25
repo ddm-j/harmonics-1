@@ -4,7 +4,7 @@
 [GCC 7.2.0] 
 
 *** Joker Computational Node Allocation ***
-Joker 2-3 
+Joker 12-13 
 
 *** Dispy Server Startup Messages ***
 
@@ -13,82 +13,42 @@ Joker 2-3
   "psutil" module is not available;
     node status (CPU, memory, disk and swap space usage) will not be sent to clients
 
-2018-08-19 12:13:51 dispynode - dispynode version: 4.9.1, PID: 4881
-2018-08-19 12:13:51 dispy - IPv6 may not work without "netifaces" package!
-2018-08-19 12:13:51 pycos - version 4.7.7 with epoll I/O notifier
+2018-08-21 01:48:33 dispynode - dispynode version: 4.9.1, PID: 23663
+2018-08-21 01:48:33 dispy - IPv6 may not work without "netifaces" package!
+2018-08-21 01:48:33 dispy - IPv6 may not work without "netifaces" package!
+2018-08-21 01:48:33 pycos - version 4.7.7 with epoll I/O notifier
 
   "psutil" module is not available;
     node status (CPU, memory, disk and swap space usage) will not be sent to clients
 
-2018-08-19 12:13:51 dispynode - dispynode version: 4.9.1, PID: 26530
-2018-08-19 12:13:51 dispy - IPv6 may not work without "netifaces" package!
-2018-08-19 12:13:51 pycos - version 4.7.7 with epoll I/O notifier
-2018-08-19 12:13:59 pycos - version 4.7.7 with epoll I/O notifier
-2018-08-19 12:13:59 dispy - dispy client version: 4.9.1
-2018-08-19 12:13:59 dispy - IPv6 may not work without "netifaces" package!
-2018-08-19 12:14:01 dispy - Storing fault recovery information in "_dispy_20180819121359"
-2018-08-19 12:13:52 dispynode - "joker-c2" serving 32 cpus
-2018-08-19 12:13:51 dispynode - "joker-c3" serving 32 cpus
-4 %  [Sharpe APR ACC EXP] = [ 1.06 8.64 51.47 2.56 ]
-Elapsed - 0 Days, 1 Hours, 13 Minutes, 28 Seconds
-Remaining - 1 Days, 6 Hours, 36 Minutes, 44 Seconds
-8 %  [Sharpe APR ACC EXP] = [ 1.25 11.59 52.19 2.93 ]
-Elapsed - 0 Days, 2 Hours, 3 Minutes, 5 Seconds
-Remaining - 1 Days, 0 Hours, 37 Minutes, 3 Seconds
-12 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 2 Hours, 41 Minutes, 58 Seconds
-Remaining - 0 Days, 20 Hours, 41 Minutes, 45 Seconds
-15 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 3 Hours, 10 Minutes, 0 Seconds
-Remaining - 0 Days, 17 Hours, 25 Minutes, 1 Seconds
-19 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 3 Hours, 33 Minutes, 11 Seconds
-Remaining - 0 Days, 14 Hours, 55 Minutes, 24 Seconds
-23 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 5 Hours, 22 Minutes, 44 Seconds
-Remaining - 0 Days, 17 Hours, 55 Minutes, 48 Seconds
-27 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 6 Hours, 37 Minutes, 23 Seconds
-Remaining - 0 Days, 17 Hours, 58 Minutes, 38 Seconds
-31 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 7 Hours, 37 Minutes, 18 Seconds
-Remaining - 0 Days, 17 Hours, 8 Minutes, 56 Seconds
-35 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 8 Hours, 18 Minutes, 50 Seconds
-Remaining - 0 Days, 15 Hours, 42 Minutes, 16 Seconds
-38 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 8 Hours, 52 Minutes, 37 Seconds
-Remaining - 0 Days, 14 Hours, 12 Minutes, 11 Seconds
-42 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 9 Hours, 16 Minutes, 44 Seconds
-Remaining - 0 Days, 12 Hours, 39 Minutes, 11 Seconds
-46 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 9 Hours, 33 Minutes, 25 Seconds
-Remaining - 0 Days, 11 Hours, 8 Minutes, 59 Seconds
-50 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 11 Hours, 37 Minutes, 50 Seconds
-Remaining - 0 Days, 11 Hours, 37 Minutes, 50 Seconds
-54 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 13 Hours, 3 Minutes, 53 Seconds
-Remaining - 0 Days, 11 Hours, 11 Minutes, 54 Seconds
-58 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 14 Hours, 9 Minutes, 14 Seconds
-Remaining - 0 Days, 10 Hours, 22 Minutes, 46 Seconds
-62 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 14 Hours, 54 Minutes, 37 Seconds
-Remaining - 0 Days, 9 Hours, 19 Minutes, 8 Seconds
-65 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 15 Hours, 30 Minutes, 11 Seconds
-Remaining - 0 Days, 8 Hours, 12 Minutes, 27 Seconds
-69 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 15 Hours, 55 Minutes, 14 Seconds
-Remaining - 0 Days, 7 Hours, 4 Minutes, 33 Seconds
-73 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 3.61 ]
-Elapsed - 0 Days, 16 Hours, 15 Minutes, 27 Seconds
-Remaining - 0 Days, 5 Hours, 59 Minutes, 22 Seconds
-77 %  [Sharpe APR ACC EXP] = [ 1.49 15.59 52.19 4.68 ]
-Elapsed - 0 Days, 18 Hours, 54 Minutes, 20 Seconds
-Remaining - 0 Days, 5 Hours, 40 Minutes, 18 Seconds
-81 %  [Sharpe APR ACC EXP] = [ 1.86 23.58 52.19 6.26 ]
-Elapsed - 0 Days, 20 Hours, 44 Minutes, 55 Seconds
-Remaining - 0 Days, 4 Hours, 56 Minutes, 24 Seconds
+2018-08-21 01:48:33 dispynode - dispynode version: 4.9.1, PID: 2747
+2018-08-21 01:48:33 dispy - IPv6 may not work without "netifaces" package!
+2018-08-21 01:48:33 dispy - IPv6 may not work without "netifaces" package!
+2018-08-21 01:48:33 pycos - version 4.7.7 with epoll I/O notifier
+Starting Initial Optimization
+2018-08-21 01:48:40 pycos - version 4.7.7 with epoll I/O notifier
+2018-08-21 01:48:40 dispy - dispy client version: 4.9.1
+2018-08-21 01:48:40 dispy - IPv6 may not work without "netifaces" package!
+2018-08-21 01:48:40 dispy - IPv6 may not work without "netifaces" package!
+2018-08-21 01:48:40 dispy - Storing fault recovery information in "_dispy_20180821014840"
+2018-08-21 01:48:33 dispynode - "joker-c12" serving 48 cpus
+4.36 %
+Traceback (most recent call last):
+  File "/software/development/Build/Anaconda3-4.4.0/envs/python-3.6/bin/dispynode.py", line 197, in _dispy_job_func
+    __dispy_job_name, globals())
+  File "<string>", line 1, in <module>
+  File "<string>", line 5, in compute
+  File "./botProto1.py", line 547, in backtest
+    self.performance = self.get_performance(self.trade_info,[start_seconds,end_seconds,patt_cnt,corr_pats])
+  File "./botProto1.py", line 686, in get_performance
+    apr = 100 * (np.exp((float(252) * np.log(equity[-1] / equity[0])) / t_elapsed) - 1)
+IndexError: index -1 is out of bounds for axis 0 with size 0
+
+Traceback (most recent call last):
+  File "/var/spool/slurmd/job379610/slurm_script", line 1223, in <module>
+    peak_param, pattern_error, pip_res, perf=bot.backtest(data,parameters,web_up=False)
+  File "/var/spool/slurmd/job379610/slurm_script", line 492, in backtest
+    performance = opt.search()
+  File "/var/spool/slurmd/job379610/slurm_script", line 1129, in search
+    {'peak': retval[0], 'error': retval[1],
+TypeError: 'NoneType' object is not subscriptable
