@@ -40,6 +40,7 @@ class PatternBot(object):
         self.pairs = pairs
         self.custom = custom
 
+    @profile
     def backtest(self,data_object,params,web_up=True):
 
         self.frame = data_object.frame
@@ -87,7 +88,9 @@ class PatternBot(object):
 
             # Get New Data and append to historical feed
 
-            self.hist_data = self.hist_data.append(data_object.data_feed.iloc[i])
+            #self.hist_data = self.hist_data.append(data_object.data_feed.iloc[i])
+
+            self.hist_data = data_object.data_feed.iloc[:i]
 
             # Check for Patterns!
 
