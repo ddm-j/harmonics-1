@@ -40,8 +40,6 @@ class PatternBot(object):
         self.pairs = pairs
         self.custom = custom
 
-
-    @profile
     def backtest(self,data_object,params,web_up=True):
 
         self.frame = data_object.frame
@@ -502,7 +500,7 @@ class PatternBot(object):
             patt_err = params[i][1]
             range = params[i][0]
 
-            if len(self.hist_data) < 201:
+            if len(self.hist_data) < 210:
 
                 return None
 
