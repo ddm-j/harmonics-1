@@ -2,25 +2,39 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import argrelextrema, argrelmax, argrelmin
+import fast_any_all as faa
+
+def is_pattern(fib_levels,labels,moves,err_allowed):
+
+    conditions = [generate_cond(fib_levels['gartley'],moves,err_allowed),
+                  generate_cond(fib_levels['butterfly'],moves,err_allowed),
+                  generate_cond(fib_levels['bat'],moves,err_allowed),
+                  generate_cond(fib_levels['crab'],moves,err_allowed)]
+
+    if faa.any(conditions):
+        return [labels[np.where(conditions)[0][0]],'Bearish' if moves[0] < 0 else 'Bullish']
+    else:
+        return None
+
+def generate_cond(levels, moves, err_allowed):
+    cond = levels[0][0]-err_allowed < abs(moves[1]) < levels[0][1]+err_allowed and \
+           levels[1][0]-err_allowed < abs(moves[2]) < levels[1][1]+err_allowed and \
+           levels[2][0]-err_allowed < abs(moves[3]) < levels[2][1]+err_allowed
+    return cond
 
 def is_gartley(moves,err_allowed):
 
     err_allowed = float(err_allowed)/float(100)
 
-    XA = moves[0]
-    AB = moves[1]
-    BC = moves[2]
-    CD = moves[3]
+    AB_ret = np.array([61.8 / 100 - err_allowed, 61.8 / 100 + err_allowed]) * abs(moves[0])
 
-    AB_ret = np.array([61.8 / 100 - err_allowed, 61.8 / 100 + err_allowed]) * abs(XA)
+    BC_ret = np.array([38.2 / 100 - err_allowed, 88.6 / 100 + err_allowed]) * abs(moves[1])
 
-    BC_ret = np.array([38.2 / 100 - err_allowed, 88.6 / 100 + err_allowed]) * abs(AB)
+    CD_ret = np.array([1.27 - err_allowed, 1.618 + err_allowed]) * abs(moves[2])
 
-    CD_ret = np.array([1.27 - err_allowed, 1.618 + err_allowed]) * abs(BC)
+    if AB_ret[0] < abs(moves[1]) < AB_ret[1] and BC_ret[0] < abs(moves[2]) < BC_ret[1] and CD_ret[0] < abs(moves[3]) < CD_ret[1]:
 
-    if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-        return 1 if XA > 0 else -1
+        return 1 if moves[0] > 0 else -1
 
     else:
         return np.NAN
@@ -30,20 +44,15 @@ def is_butterfly(moves,err_allowed):
 
     err_allowed = float(err_allowed)/float(100)
 
-    XA = moves[0]
-    AB = moves[1]
-    BC = moves[2]
-    CD = moves[3]
+    AB_ret = np.array([78.6 / 100 - err_allowed, 78.6 / 100 + err_allowed]) * abs(moves[0])
 
-    AB_ret = np.array([78.6 / 100 - err_allowed, 78.6 / 100 + err_allowed]) * abs(XA)
+    BC_ret = np.array([38.2 / 100 - err_allowed, 88.6 / 100 + err_allowed]) * abs(moves[1])
 
-    BC_ret = np.array([38.2 / 100 - err_allowed, 88.6 / 100 + err_allowed]) * abs(AB)
+    CD_ret = np.array([1.618 - err_allowed, 2.618 + err_allowed]) * abs(moves[2])
 
-    CD_ret = np.array([1.618 - err_allowed, 2.618 + err_allowed]) * abs(BC)
+    if AB_ret[0] < abs(moves[1]) < AB_ret[1] and BC_ret[0] < abs(moves[2]) < BC_ret[1] and CD_ret[0] < abs(moves[3]) < CD_ret[1]:
 
-    if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-        return 1 if XA > 0 else -1
+        return 1 if moves[0] > 0 else -1
 
     else:
 
@@ -54,20 +63,15 @@ def is_bat(moves,err_allowed):
 
     err_allowed = float(err_allowed)/float(100)
 
-    XA = moves[0]
-    AB = moves[1]
-    BC = moves[2]
-    CD = moves[3]
+    AB_ret = np.array([32.8 / 100 - err_allowed, 50.0 / 100 + err_allowed]) * abs(moves[0])
 
-    AB_ret = np.array([32.8 / 100 - err_allowed, 50.0 / 100 + err_allowed]) * abs(XA)
+    BC_ret = np.array([38.2 / 100 - err_allowed, 88.6 / 100 + err_allowed]) * abs(moves[1])
 
-    BC_ret = np.array([38.2 / 100 - err_allowed, 88.6 / 100 + err_allowed]) * abs(AB)
+    CD_ret = np.array([161.8/100 - err_allowed, 261.8/100 + err_allowed]) * abs(moves[2])
 
-    CD_ret = np.array([161.8/100 - err_allowed, 261.8/100 + err_allowed]) * abs(BC)
+    if AB_ret[0] < abs(moves[1]) < AB_ret[1] and BC_ret[0] < abs(moves[2]) < BC_ret[1] and CD_ret[0] < abs(moves[3]) < CD_ret[1]:
 
-    if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-        return 1 if XA > 0 else -1
+        return 1 if moves[0] > 0 else -1
 
     else:
 
@@ -78,20 +82,15 @@ def is_crab(moves,err_allowed):
 
     err_allowed = float(err_allowed)/float(100)
 
-    XA = moves[0]
-    AB = moves[1]
-    BC = moves[2]
-    CD = moves[3]
+    AB_ret = np.array([38.2 / 100 - err_allowed, 61.8 / 100 + err_allowed]) * abs(moves[0])
 
-    AB_ret = np.array([38.2 / 100 - err_allowed, 61.8 / 100 + err_allowed]) * abs(XA)
+    BC_ret = np.array([38.2 / 100 - err_allowed, 88.6 / 100 + err_allowed]) * abs(moves[1])
 
-    BC_ret = np.array([38.2 / 100 - err_allowed, 88.6 / 100 + err_allowed]) * abs(AB)
+    CD_ret = np.array([224.0 / 100 - err_allowed, 361.8 / 100 + err_allowed]) * abs(moves[2])
 
-    CD_ret = np.array([224.0 / 100 - err_allowed, 361.8 / 100 + err_allowed]) * abs(BC)
+    if AB_ret[0] < abs(moves[1]) < AB_ret[1] and BC_ret[0] < abs(moves[2]) < BC_ret[1] and CD_ret[0] < abs(moves[3]) < CD_ret[1]:
 
-    if AB_ret[0] < abs(AB) < AB_ret[1] and BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
-
-        return 1 if XA > 0 else -1
+        return 1 if moves[0] > 0 else -1
 
     else:
 
@@ -102,19 +101,14 @@ def is_shark(moves,err_allowed):
 
     err_allowed = float(err_allowed)/float(100)
 
-    XA = moves[0]
-    AB = moves[1]
-    BC = moves[2]
-    CD = moves[3]
+    BC_ret = np.array([113.0 / 100 - err_allowed, 161.8 / 100 + err_allowed]) * abs(moves[0])
 
-    BC_ret = np.array([113.0 / 100 - err_allowed, 161.8 / 100 + err_allowed]) * abs(XA)
-
-    CD_ret = np.array([161.8 / 100 - err_allowed, 224.0 / 100 + err_allowed]) * abs(AB)
+    CD_ret = np.array([161.8 / 100 - err_allowed, 224.0 / 100 + err_allowed]) * abs(moves[1])
 
 
-    if BC_ret[0] < abs(BC) < BC_ret[1] and CD_ret[0] < abs(CD) < CD_ret[1]:
+    if BC_ret[0] < abs(moves[2]) < BC_ret[1] and CD_ret[0] < abs(moves[3]) < CD_ret[1]:
 
-        return 1 if XA > 0 else -1
+        return 1 if moves[0] > 0 else -1
 
     else:
 
@@ -139,6 +133,45 @@ def peak_detect(price,peak_range=5):
 
     return peaks_idx,peaks
 
+def fft_detect(price, p=0.4):
+
+    trans = np.fft.rfft(price)
+    trans[round(p*len(trans)):] = 0
+    inv = np.fft.irfft(trans)
+    dy = np.gradient(inv)
+    patt_idx = (np.where(np.diff(np.sign(dy)))[0] + 1)[1:]
+
+    label = np.array([x for x in np.diff(np.sign(dy)) if x != 0])
+
+    # Look for Better Peaks
+
+    if 0.1 <= p < 0.2:
+        l = 4
+    elif p == 0.2:
+        l = 3
+    elif 0.2 < p <= 0.3:
+        l = 2
+    elif p > 0.3:
+        l = 2
+
+    # Define the bounds beforehand, its marginally faster than doing it in the loop
+    upper = np.array(patt_idx) + (l+1)
+    lower = np.array(patt_idx) - (l-1)
+
+    # List comprehension...
+    new_inds = [price[low:hi].argmax()+low if lab == 2 else
+                price[low:hi].argmin()+low
+                for low, hi, lab in zip(lower, upper, label)]
+
+    new_inds = np.append(new_inds, len(price) - 1)
+
+    #plt.plot(price)
+    #plt.plot(inv)
+    #plt.scatter(new_inds,price[new_inds])
+    #plt.scatter(patt_idx,price[patt_idx],c='r')
+    #plt.show()
+
+    return new_inds, price[new_inds]
 
 # Position Sizing Function
 

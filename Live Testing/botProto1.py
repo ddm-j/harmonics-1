@@ -31,7 +31,7 @@ def profile(fnc):
 
 class PatternBot(object):
 
-    def __init__(self,pairs,risk=1,custom=False):
+    def __init__(self,pairs,risk=1,peak_method='scipy',custom=False):
 
         self.perRisk = risk
         self.pipRisk = 20
@@ -39,9 +39,32 @@ class PatternBot(object):
         self.train = None
         self.pairs = pairs
         self.custom = custom
+        self.fib_levels = {'gartley': [np.array([61.8 / 100, 61.8 / 100]),
+                                        np.array([38.2 / 100, 88.6 / 100]),
+                                        np.array([1.27, 1.618])],
+                            'butterfly': [np.array([78.6 / 100, 78.6 / 100]),
+                                          np.array([38.2 / 100, 88.6 / 100]),
+                                          np.array([1.618, 2.618])],
+                            'bat': [np.array([38.2 / 100, 50.0 / 100]),
+                                    np.array([38.2 / 100, 88.6 / 100]),
+                                    np.array([161.8 / 100, 261.8 / 100])],
+                            'crab': [np.array([38.2 / 100, 61.8 / 100]),
+                                     np.array([38.2 / 100, 88.6 / 100]),
+                                     np.array([224.0 / 100, 361.8 / 100])]}
+        self.labels = ['Gartley', 'Butterfly', 'Bat', 'Crab']
+        self.peak_method = peak_method
 
-    @profile
-    def backtest(self,data_object,params,web_up=True):
+    #@profile
+    def backtest(self,data_object,params,dates = None, web_up=True):
+
+        if dates != None:
+
+            new_dates = []
+            for i in dates:
+                nearest = backtestData.nearest(data_object,[i], data_object.data_feed.index)
+                new_dates.append(nearest)
+
+            data_object.data_feed = data_object.data_feed[new_dates[0]:new_dates[1]]
 
         self.frame = data_object.frame
 
@@ -50,10 +73,10 @@ class PatternBot(object):
         # Extract Parameters
 
         params_dict = {'EUR_USD':params,'GBP_USD':params,'AUD_USD':params,'NZD_USD':params}
-        params_dict['EUR_USD'][-1] = 19
-        params_dict['GBP_USD'][-1] = 26
-        params_dict['NZD_USD'][-1] = 29
-        params_dict['AUD_USD'][-1] = 9
+        params_dict['EUR_USD'][-1] = 15
+        params_dict['GBP_USD'][-1] = 15
+        params_dict['NZD_USD'][-1] = 15
+        params_dict['AUD_USD'][-1] = 15
 
         Plot = False
 
@@ -76,19 +99,12 @@ class PatternBot(object):
 
         # Get data
 
-        self.hist_data = data_object.data_runner
-
         last_patt_start = 0
         last_trade_time = 0
 
         # LoopStart
 
         for i in tqdm(range(0,len(data_object.data_feed))):
-
-
-            # Get New Data and append to historical feed
-
-            #self.hist_data = self.hist_data.append(data_object.data_feed.iloc[i])
 
             self.hist_data = data_object.data_feed.iloc[:i]
 
@@ -128,11 +144,23 @@ class PatternBot(object):
 
                     sign = -1 if patterns[1] == 'Bearish' else 1
                     if len(data_object.data_feed) > i + trade_period:
-                        pips = data_object.data_feed[pair].iloc[i + trade_period] - data_object.data_feed[pair].iloc[i]
+
+                        if sign == 1:
+                            pips = data_object.data_feed[pair].iloc[i + trade_period] - data_object.data_feed[pair].iloc[i]
+
+                        else:
+                            pips = data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[i + trade_period]
+
                         exit_time = data_object.data_feed.iloc[i + trade_period].name
 
                     else:
-                        pips = data_object.data_feed[pair].iloc[-1] - data_object.data_feed[pair].iloc[i]
+
+                        if sign == 1:
+                            pips = data_object.data_feed[pair].iloc[-1] - data_object.data_feed[pair].iloc[i]
+
+                        else:
+                            pips = data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[-1]
+
                         exit_time = data_object.data_feed.iloc[-1].name
 
                     if len(data_object.data_feed) > i + look_ahead:
@@ -144,6 +172,12 @@ class PatternBot(object):
                             pip_hist[pair] += data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[
                                                                               i:i + look_ahead].values
 
+                    if np.isnan(pips):
+
+                        print(pips, 'error')
+                        print(pair)
+                        print(data_object.data_feed[pair].iloc[i])
+                        print(data_object.data_feed[pair].iloc[i + trade_period])
                     # Get indicators
 
                     #patt_index = data_object.historical_all[pair].index.get_loc(trade_time)
@@ -190,6 +224,9 @@ class PatternBot(object):
         equity = [1000]
 
         equity = self.pnl2equity(pnl,sizes,pair_list,quote_list,stop_list,[data_object.historical_all[self.pairs[0]].index.tolist(),entry_dates,exit_dates],equity)
+
+        plt.plot(equity)
+        plt.show()
 
         self.trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
                                    'pnl':pnl,'equity':equity[1:]})
@@ -448,11 +485,14 @@ class PatternBot(object):
             return (price[0] - spread) - price[-1], price.index[-1]
 
 
-    def check_pattern(self,price,err_allowed,range_param):
+    def check_pattern(self,price,err_allowed,range_param,method='scipy'):
 
         pat_length = 5
 
-        peaks_idx, peaks = peak_detect(price.values, peak_range=range_param)
+        if method == 'scipy':
+            peaks_idx, peaks = peak_detect(price.values, peak_range=range_param)
+        elif method == 'fft':
+            peaks_idx, peaks = fft_detect(price.values,p=range_param)
 
         current_idx = np.array(peaks_idx[-pat_length:])
         current_pat = peaks[-pat_length:]
@@ -485,9 +525,9 @@ class PatternBot(object):
 
             idx = np.where(abs(harmonics) == 1.)[0][0]
             pattern = labels[idx]
-            sense = 'Bearish' if harmonics[idx]==-1 else 'Bullish'
+            sense = 'Bearish' if harmonics[idx] == -1 else 'Bullish'
 
-            return [pattern,sense,current_idx,current_pat]
+            return [pattern, sense, current_idx, current_pat]
 
         else:
 
@@ -498,6 +538,8 @@ class PatternBot(object):
 
         results = {}
 
+
+
         for i in self.pairs:
 
             patt_err = params[i][1]
@@ -507,7 +549,7 @@ class PatternBot(object):
 
                 return None
 
-            pattern = self.check_pattern(self.hist_data[i].iloc[-200:],err_allowed=patt_err,range_param=range)
+            pattern = self.check_pattern(self.hist_data[i].iloc[-200:],err_allowed=patt_err,range_param=range,method=self.peak_method)
 
 
             if pattern != None:

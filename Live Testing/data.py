@@ -257,7 +257,7 @@ class backtestResults(object):
 
 class backtestData(object):
 
-    def __init__(self,pairs,frame,n_split,dates=None):
+    def __init__(self,pairs,frame,dates=None):
         self.pairs = pairs
         self.frame = frame
         self.dates = dates
@@ -285,11 +285,8 @@ class backtestData(object):
 
         if self.dates == None:
 
-            self.historical_hour = hist_data_hour
+            self.data_feed = hist_data_hour
             self.historical_all = hist_data_all
-
-            self.data_runner = self.historical_hour.iloc[:n_split]
-            self.data_feed = self.historical_hour.iloc[n_split:]
 
         else:
             self.dates = []
@@ -297,11 +294,8 @@ class backtestData(object):
                 nearest = self.nearest([i], hist_data_hour.index)
                 self.dates.append(nearest)
 
-            self.historical_hour = hist_data_hour[self.dates[0]:self.dates[1]]
+            self.data_feed = hist_data_hour[self.dates[0]:self.dates[1]]
             self.historical_all = hist_data_all
-
-            self.data_runner = self.historical_hour.iloc[:n_split]
-            self.data_feed = self.historical_hour.iloc[n_split:]
 
     def nearest(self, items, pivot):
         return min(items, key=lambda x: abs(x - pivot))
