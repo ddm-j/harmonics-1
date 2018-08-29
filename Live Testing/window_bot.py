@@ -3,10 +3,10 @@
 
 #
 
-#SBATCH --ntasks=2
+#SBATCH --ntasks=1
 #SBATCH --time=48:00:00
-#SBATCH --nodes=2
-#SBATCH --mem-per-cpu=8G
+#SBATCH --nodes=1
+#SBATCH --mem-per-cpu=20G
 
 
 # MAIN SCRIPT SECTION
@@ -21,6 +21,7 @@ import subprocess
 import warnings
 import os.path
 import optimization_tools
+import time
 
 # Initiate Dispy Node Server on Compute Nodes
 
@@ -40,6 +41,17 @@ print('\n')
 warnings.filterwarnings("ignore",category =RuntimeWarning)
 warnings.filterwarnings('ignore',category=UserWarning)
 
+t0 = time.time()
+
 opt = optimization_tools.dispy_optimizer(frame='5year')
 opt.prep()
-opt.search()
+results, equity = opt.search()
+results.to_csv('window_results.csv')
+equity.to_csv('equity_results.csv')
+
+best_idx = results.sharpe.idxmax()
+print(results.iloc[best_idx])
+
+t1 = time.time()
+
+print('Overall Backtest Took: ',t1-t0, 'seconds')

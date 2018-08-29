@@ -72,11 +72,17 @@ class PatternBot(object):
 
         # Extract Parameters
 
-        params_dict = {'EUR_USD':params,'GBP_USD':params,'AUD_USD':params,'NZD_USD':params}
-        params_dict['EUR_USD'][-1] = 15
-        params_dict['GBP_USD'][-1] = 15
-        params_dict['NZD_USD'][-1] = 15
-        params_dict['AUD_USD'][-1] = 15
+        if isinstance(params,dict):
+
+            params_dict = params
+
+        else:
+
+            params_dict = {'EUR_USD':params,'GBP_USD':params,'AUD_USD':params,'NZD_USD':params}
+            params_dict['EUR_USD'][-1] = 15
+            params_dict['GBP_USD'][-1] = 15
+            params_dict['NZD_USD'][-1] = 15
+            params_dict['AUD_USD'][-1] = 15
 
         Plot = False
 
@@ -109,7 +115,6 @@ class PatternBot(object):
             self.hist_data = data_object.data_feed.iloc[:i]
 
             # Check for Patterns!
-
             results_dict = self.loop_check(params_dict)
 
             if results_dict == None:
@@ -123,7 +128,7 @@ class PatternBot(object):
 
                 peak_param = params_dict[pair][0]
                 pattern_err = params_dict[pair][1]
-                trade_period = params_dict[pair][2]
+                trade_period = int(params_dict[pair][2])
 
 
                 if patterns[-1][0] != last_patt_start and data_object.data_feed.iloc[i].name != last_trade_time:
@@ -225,14 +230,16 @@ class PatternBot(object):
 
         equity = self.pnl2equity(pnl,sizes,pair_list,quote_list,stop_list,[data_object.historical_all[self.pairs[0]].index.tolist(),entry_dates,exit_dates],equity)
 
-        plt.plot(equity)
-        plt.show()
 
         self.trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
                                    'pnl':pnl,'equity':equity[1:]})
 
         start_seconds = data_object.data_feed['EUR_USD'].index[0].toordinal()
         end_seconds = data_object.data_feed['EUR_USD'].index[-1].toordinal()
+
+        stitch_info = [list(pnl), list(sizes), list(pair_list), list(quote_list), list(stop_list),
+                       data_object.historical_all[self.pairs[0]].index.tolist(), list(entry_dates), list(exit_dates),
+                       [start_seconds], [end_seconds], [patt_cnt], [corr_pats]]
 
         self.performance = self.get_performance(self.trade_info,[start_seconds,end_seconds,patt_cnt,corr_pats])
 
@@ -257,7 +264,7 @@ class PatternBot(object):
                    'NZD_USD': [pip_hist['NZD_USD'].max(), pip_hist['NZD_USD'].argmax()]}
 
 
-        return [peak_param, pattern_err, pip_res, self.performance]
+        return [peak_param, pattern_err, pip_res, self.performance, stitch_info]
 
     def plot_pattern(self,data_object,pair, patterns, trade_time, i):
 
@@ -282,8 +289,7 @@ class PatternBot(object):
         plt.title(label)
         plt.show()
 
-
-    def pnl2equity(self,pnl,sizes,pair_list,quote_list,stop_list,dates,equity):
+    def pnl2equity(self, pnl, sizes, pair_list, quote_list, stop_list, dates, equity):
 
         total_dates = dates[0]
         entry_dates = dates[1]
@@ -537,8 +543,6 @@ class PatternBot(object):
     def loop_check(self,params):
 
         results = {}
-
-
 
         for i in self.pairs:
 

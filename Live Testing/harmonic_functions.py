@@ -136,7 +136,7 @@ def peak_detect(price,peak_range=5):
 def fft_detect(price, p=0.4):
 
     trans = np.fft.rfft(price)
-    trans[round(p*len(trans)):] = 0
+    trans[int(p*len(trans)):] = 0
     inv = np.fft.irfft(trans)
     dy = np.gradient(inv)
     patt_idx = (np.where(np.diff(np.sign(dy)))[0] + 1)[1:]
@@ -146,7 +146,7 @@ def fft_detect(price, p=0.4):
     # Look for Better Peaks
 
     if 0.1 <= p < 0.2:
-        l = 4
+        l = 3
     elif p == 0.2:
         l = 3
     elif 0.2 < p <= 0.3:
