@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     t0 = time.time()
     dates = [datetime.datetime.strptime(i, '%d-%m-%Y') for i in ['1-1-2016','1-1-2018']]
-    x1, x2, x3, x4=bot.backtest(data,parameters,dates = None,web_up=False)
+    x1, x2, x3, x4, x5=bot.backtest(data,parameters,dates = None,web_up=False)
     t1 = time.time()
     print(x3)
     print(x4)

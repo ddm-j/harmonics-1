@@ -34,7 +34,7 @@ nodes = nodes[8:-2]
 
 print('Joker', nodes, '\n')
 print('*** Dispy Server Startup Messages ***')
-os.system('srun dispynode.py --clean --daemon & &>/dev/null')
+os.system('srun dispynode.py -d --clean --daemon & &>/dev/null')
 print('\n')
 
 
@@ -46,8 +46,8 @@ t0 = time.time()
 opt = optimization_tools.dispy_optimizer(frame='5year')
 opt.prep()
 results, equity = opt.search()
-results.to_csv('window_results.csv')
-equity.to_csv('equity_results.csv')
+results.to_csv('window_results_scipy.csv')
+equity.to_csv('equity_results_scipy.csv')
 
 best_idx = results.sharpe.idxmax()
 print(results.iloc[best_idx])

@@ -283,6 +283,7 @@ class backtestData(object):
 
             hist_data_hour[i] = tmp.close
 
+
         if self.dates == None:
 
             self.data_feed = hist_data_hour
@@ -296,6 +297,11 @@ class backtestData(object):
 
             self.data_feed = hist_data_hour[self.dates[0]:self.dates[1]]
             self.historical_all = hist_data_all
+
+        check_dates = [pd.to_datetime('01.01.2017 05:00:00.00', format='%d.%m.%Y %H:%M:%S.%f'),
+                       pd.to_datetime('01.01.2017 23:00:00.00', format='%d.%m.%Y %H:%M:%S.%f')]
+
+        self.data_feed = self.data_feed.fillna(method='ffill')
 
     def nearest(self, items, pivot):
         return min(items, key=lambda x: abs(x - pivot))

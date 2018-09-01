@@ -183,6 +183,14 @@ class PatternBot(object):
                         print(pair)
                         print(data_object.data_feed[pair].iloc[i])
                         print(data_object.data_feed[pair].iloc[i + trade_period])
+                        print(data_object.data_feed[pair].iloc[i:i+trade_period+5])
+
+                        if len(data_object.data_feed) < i +trade_period:
+
+                            print('Theres the error')
+
+
+
                     # Get indicators
 
                     #patt_index = data_object.historical_all[pair].index.get_loc(trade_time)
@@ -496,6 +504,7 @@ class PatternBot(object):
         pat_length = 5
 
         if method == 'scipy':
+            range_param = int(range_param)
             peaks_idx, peaks = peak_detect(price.values, peak_range=range_param)
         elif method == 'fft':
             peaks_idx, peaks = fft_detect(price.values,p=range_param)
