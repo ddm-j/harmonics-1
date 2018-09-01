@@ -122,8 +122,8 @@ class dispy_optimizer(object):
         self.lower_bound, self.upper_bound = 100, 300
         self.jobs_cond = threading.Condition()
 
-        data_ob = data.backtestData(frame=self.frame,pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD'])
-        pat_bot = botProto1.PatternBot(pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD'],peak_method='scipy')
+        data_ob = data.backtestData(frame=self.frame,pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD', 'USD_JPY'])
+        pat_bot = botProto1.PatternBot(pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD', 'USD_JPY'],peak_method='scipy')
 
         cluster = dispy.JobCluster(compute, depends=[harmonic_functions,
                                                      fast_any_all,'Data/GBPUSD.csv'],
@@ -176,7 +176,8 @@ class dispy_optimizer(object):
                 self.param_results[repr(window)][n] = pd.DataFrame(columns=['peak', 'error', 'EUR_USD_pips', 'EUR_USD_period',
                                              'GBP_USD_pips', 'GBP_USD_period',
                                              'AUD_USD_pips', 'AUD_USD_period',
-                                             'NZD_USD_pips', 'NZD_USD_period'])
+                                             'NZD_USD_pips', 'NZD_USD_period',
+                                                                            'USD_JPY_pips', 'USD_JPY_period'])
                 self.test_params[repr(window)][n] = {}
 
 
@@ -263,12 +264,13 @@ class dispy_optimizer(object):
 
                 # Get Equity Curve for Stitched Result
 
-            equity_master[window_key] = pat_bot.pnl2equity(stitched_results[window_key][0],
-                                                       [],
-                                                       stitched_results[window_key][2],
-                                                       stitched_results[window_key][3],
-                                                       stitched_results[window_key][4],
-            [master_dates,stitched_results[window_key][6],stitched_results[window_key][7]],[1000])
+            equity_master[window_key] = pat_bot.pnl2equity(stitched_results[window_key][0], #pnl
+                                                       [], #sizes
+                                                       stitched_results[window_key][2], #pair list
+                                                       stitched_results[window_key][3], #quote entry
+                                                           stitched_results[window_key][4], #quote exit
+                                                       stitched_results[window_key][5], # stop list
+            [master_dates,stitched_results[window_key][7],stitched_results[window_key][8]],[1000])
 
             trade_info[window_key] = pd.DataFrame(
                 {'instrument': stitched_results[window_key][2],

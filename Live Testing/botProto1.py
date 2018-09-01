@@ -78,11 +78,13 @@ class PatternBot(object):
 
         else:
 
-            params_dict = {'EUR_USD':params,'GBP_USD':params,'AUD_USD':params,'NZD_USD':params}
+            params_dict = {'EUR_USD':params,'GBP_USD':params,'AUD_USD':params,'NZD_USD':params,
+                           'USD_JPY':params}
             params_dict['EUR_USD'][-1] = 15
             params_dict['GBP_USD'][-1] = 15
             params_dict['NZD_USD'][-1] = 15
             params_dict['AUD_USD'][-1] = 15
+            params_dict['USD_JPY'][-1] = 15
 
         Plot = False
 
@@ -90,14 +92,15 @@ class PatternBot(object):
         pair_neg = pd.DataFrame(dict((key, [0]) for key in self.pairs))
         pnl = []
         pair_list = []
-        quote_list = []
+        quote_entry = []
+        quote_exit = []
         stop_list = []
         entry_dates = []
         exit_dates = []
         look_ahead = 30
         empty_lists = np.repeat(0.0,look_ahead)
         pip_hist = {'EUR_USD':empty_lists.copy(),'GBP_USD':empty_lists.copy(),'NZD_USD':empty_lists.copy(),
-                    'AUD_USD': empty_lists.copy()}
+                    'AUD_USD': empty_lists.copy(), 'USD_JPY':empty_lists.copy()}
         cl = []
         sizes = []
         patt_cnt = 0
@@ -136,7 +139,7 @@ class PatternBot(object):
                     last_patt_start = patterns[-1][0]
                     last_trade_time = data_object.data_feed.iloc[i].name
 
-                    quote_list.append(patterns[-1][-1])
+                    quote_entry.append(patterns[-1][-1])
 
                     patt_cnt += 1
 
@@ -152,11 +155,11 @@ class PatternBot(object):
 
                         if sign == 1:
                             pips = data_object.data_feed[pair].iloc[i + trade_period] - data_object.data_feed[pair].iloc[i]
-
                         else:
                             pips = data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[i + trade_period]
 
                         exit_time = data_object.data_feed.iloc[i + trade_period].name
+                        quote_exit.append(data_object.data_feed.iloc[i+trade_period].values[0])
 
                     else:
 
@@ -167,6 +170,7 @@ class PatternBot(object):
                             pips = data_object.data_feed[pair].iloc[i] - data_object.data_feed[pair].iloc[-1]
 
                         exit_time = data_object.data_feed.iloc[-1].name
+                        quote_exit.append(data_object.data_feed.iloc[-1].values[0])
 
                     if len(data_object.data_feed) > i + look_ahead:
                         if sign == 1:
@@ -236,8 +240,7 @@ class PatternBot(object):
 
         equity = [1000]
 
-        equity = self.pnl2equity(pnl,sizes,pair_list,quote_list,stop_list,[data_object.historical_all[self.pairs[0]].index.tolist(),entry_dates,exit_dates],equity)
-
+        equity = self.pnl2equity(pnl,sizes,pair_list,quote_entry,quote_exit,stop_list,[data_object.historical_all[self.pairs[0]].index.tolist(),entry_dates,exit_dates],equity)
 
         self.trade_info = pd.DataFrame({'instrument':pair_list,'entry':entry_dates,'exit':exit_dates,'pos_size':sizes,
                                    'pnl':pnl,'equity':equity[1:]})
@@ -245,7 +248,7 @@ class PatternBot(object):
         start_seconds = data_object.data_feed['EUR_USD'].index[0].toordinal()
         end_seconds = data_object.data_feed['EUR_USD'].index[-1].toordinal()
 
-        stitch_info = [list(pnl), list(sizes), list(pair_list), list(quote_list), list(stop_list),
+        stitch_info = [list(pnl), list(sizes), list(pair_list), list(quote_entry), list(quote_exit), list(stop_list),
                        data_object.historical_all[self.pairs[0]].index.tolist(), list(entry_dates), list(exit_dates),
                        [start_seconds], [end_seconds], [patt_cnt], [corr_pats]]
 
@@ -269,7 +272,8 @@ class PatternBot(object):
         pip_res = {'EUR_USD': [pip_hist['EUR_USD'].max(), pip_hist['EUR_USD'].argmax()],
                    'GBP_USD': [pip_hist['GBP_USD'].max(), pip_hist['GBP_USD'].argmax()],
                    'AUD_USD': [pip_hist['AUD_USD'].max(), pip_hist['AUD_USD'].argmax()],
-                   'NZD_USD': [pip_hist['NZD_USD'].max(), pip_hist['NZD_USD'].argmax()]}
+                   'NZD_USD': [pip_hist['NZD_USD'].max(), pip_hist['NZD_USD'].argmax()],
+                   'USD_JPY': [pip_hist['USD_JPY'].max(), pip_hist['USD_JPY'].argmax()]}
 
 
         return [peak_param, pattern_err, pip_res, self.performance, stitch_info]
@@ -297,7 +301,7 @@ class PatternBot(object):
         plt.title(label)
         plt.show()
 
-    def pnl2equity(self, pnl, sizes, pair_list, quote_list, stop_list, dates, equity):
+    def pnl2equity(self, pnl, sizes, pair_list, quote_entry, quote_exit, stop_list, dates, equity):
 
         total_dates = dates[0]
         entry_dates = dates[1]
@@ -323,9 +327,10 @@ class PatternBot(object):
                 pnl_i = pnl[ind]
                 u_j = pair_list[ind][-3:] == 'JPY'
                 flip = pair_list[ind][:3] == 'USD'
-                quote = quote_list[ind]
+                quote_et = quote_entry[ind]
+                quote_ex = quote_exit[ind]
 
-                position = posSizeBT(current_eq, self.perRisk, 20)
+                position = posSizeBT(current_eq, self.perRisk, 20, u_j=u_j, quote=quote_et)
 
                 # Update Current Equity
 
@@ -333,11 +338,7 @@ class PatternBot(object):
 
                 sizes.append(position)
 
-                if u_j:
-
-                    print(pnl_i)
-
-                revenue = cost + position * pnl_i
+                revenue = cost + position*pnl_i/quote_ex if u_j else cost + position * pnl_i
 
                 comission = revenue * (25 / 1000000)
 

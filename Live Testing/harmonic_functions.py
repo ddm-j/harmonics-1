@@ -247,12 +247,16 @@ def resampler(price,timeframe='M',length=30):
 
 # Position Sizing Function
 
-def posSizeBT(accountBalance,percentageRisk,pipRisk):
+def posSizeBT(accountBalance,percentageRisk,pipRisk,u_j=False,quote=None):
 
     trade = (percentageRisk/100)*accountBalance
 
+    if u_j:
+
+        trade *= quote
+
     pipval = trade/pipRisk
 
-    size = pipval*10000 # 10000 units / (1$/pip)
+    size = pipval*100 if u_j else pipval*10000 # 10000 units / (1$/pip)
 
     return size
