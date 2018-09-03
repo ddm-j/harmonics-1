@@ -34,7 +34,7 @@ nodes = nodes[8:-2]
 
 print('Joker', nodes, '\n')
 print('*** Dispy Server Startup Messages ***')
-os.system('srun dispynode.py -d --clean --daemon & &>/dev/null')
+os.system('srun dispynode.py --clean --daemon &')
 print('\n')
 
 

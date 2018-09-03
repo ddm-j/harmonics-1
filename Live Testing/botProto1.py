@@ -212,7 +212,7 @@ class PatternBot(object):
                     exit_dates.append(exit_time)
                     pair_list.append(pair)
 
-                    pnl = np.append(pnl, pips)
+                    pnl = np.append(pnl, pips/100 if pair == 'USD_JPY' else pips)
 
                     # Append Pattern Info
 

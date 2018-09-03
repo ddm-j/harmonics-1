@@ -17,7 +17,7 @@ class dispy_optimizer(object):
 
     def __init__(self,frame):
 
-        self.pairs = ['EUR_USD','GBP_USD','AUD_USD','NZD_USD']
+        self.pairs = ['EUR_USD','GBP_USD','AUD_USD','NZD_USD', 'USD_JPY']
         self.error_vals = [5.0,10.0,15.0,20.0,25.0]
         #self.peak_vals = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
         self.peak_vals = [5, 10, 15, 20]
@@ -25,9 +25,10 @@ class dispy_optimizer(object):
         self.results = pd.DataFrame(columns=['peak', 'error', 'EUR_USD_pips', 'EUR_USD_period',
                                              'GBP_USD_pips', 'GBP_USD_period',
                                              'AUD_USD_pips', 'AUD_USD_period',
-                                             'NZD_USD_pips', 'NZD_USD_period'])
+                                             'NZD_USD_pips', 'NZD_USD_period',
+                                             'USD_JPY_pips', 'USD_JPY_period'])
         self.frame = frame
-        training_windows = [1000 , 2500, 5000, 7500, 10000]
+        training_windows = [1000 , 2500, 5000]
         testing_windows = [500, 750 , 1000, 1500, 2000]
 
         input_windows = [training_windows, testing_windows]
@@ -51,8 +52,6 @@ class dispy_optimizer(object):
         if (job.status == dispy.DispyJob.Finished  # most usual case
                 or job.status in (dispy.DispyJob.Terminated, dispy.DispyJob.Cancelled,
                                   dispy.DispyJob.Abandoned)):
-
-            #print(job.exception)
 
             self.completed_jobs += 1
 
@@ -95,7 +94,10 @@ class dispy_optimizer(object):
                          'AUD_USD_pips': retval[2]['AUD_USD'][0],
                          'AUD_USD_period': retval[2]['AUD_USD'][1],
                          'NZD_USD_pips': retval[2]['NZD_USD'][0],
-                         'NZD_USD_period': retval[2]['NZD_USD'][1]}, ignore_index=True)
+                         'NZD_USD_period': retval[2]['NZD_USD'][1],
+                         'USD_JPY_pips': retval[2]['USD_JPY'][0],
+                         'USD_JPY_period': retval[2]['USD_JPY'][1]
+                         }, ignore_index=True)
 
                 elif type == 'test':
 
@@ -122,24 +124,24 @@ class dispy_optimizer(object):
         self.lower_bound, self.upper_bound = 100, 300
         self.jobs_cond = threading.Condition()
 
-        data_ob = data.backtestData(frame=self.frame,pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD', 'USD_JPY'])
+        data_ob = data.backtestData(frame=self.frame,pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD', 'USD_JPY'],resampled='4H')
         pat_bot = botProto1.PatternBot(pairs=['EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD', 'USD_JPY'],peak_method='scipy')
 
         cluster = dispy.JobCluster(compute, depends=[harmonic_functions,
                                                      fast_any_all,'Data/GBPUSD.csv'],
                                    setup=functools.partial(setup,data_ob,pat_bot),
-                                   callback=self.callback, loglevel=logging.DEBUG)
+                                   callback=self.callback, pulse_interval=5)
         self.pending_jobs = {}
         self.completed_jobs = 0
 
         master_dates = data_ob.data_feed.index
 
-        shift = 200
+        shift = 150
 
         test_date_dict = {}
+        train_date_dict = {}
 
         t = 0
-        total = 12444
 
         self.start = time.time()
 
@@ -153,6 +155,7 @@ class dispy_optimizer(object):
                 i in range(0, int((len(master_dates) - window[0]) / window[1]))]
 
             test_date_dict[repr(window)] = test_dates
+            train_date_dict[repr(window)] = train_dates
 
         total = len(self.grid)*sum([len(x) for x in test_date_dict.values()])
 
@@ -171,7 +174,7 @@ class dispy_optimizer(object):
 
             # Submit Training Sets to Nodes
 
-            for n,date_set in enumerate(train_dates):
+            for n,date_set in enumerate(train_date_dict[repr(window)]):
 
                 self.param_results[repr(window)][n] = pd.DataFrame(columns=['peak', 'error', 'EUR_USD_pips', 'EUR_USD_period',
                                              'GBP_USD_pips', 'GBP_USD_period',
@@ -274,17 +277,17 @@ class dispy_optimizer(object):
 
             trade_info[window_key] = pd.DataFrame(
                 {'instrument': stitched_results[window_key][2],
-                 'entry': stitched_results[window_key][6],
-                 'exit': stitched_results[window_key][7],
+                 'entry': stitched_results[window_key][7],
+                 'exit': stitched_results[window_key][8],
                  'pos_size': stitched_results[window_key][1],
                  'pnl': stitched_results[window_key][0],
                  'equity': equity_master[window_key][1:]})
 
             perf_master[window_key] = pat_bot.get_performance(trade_info[window_key],
-                                                          [stitched_results[window_key][8][0],
-                                                           stitched_results[window_key][9][-1],
-                                                           sum(stitched_results[window_key][10]),
-                                                           sum(stitched_results[window_key][11])])[0:4]
+                                                          [stitched_results[window_key][9][0],
+                                                           stitched_results[window_key][10][-1],
+                                                           sum(stitched_results[window_key][11]),
+                                                           sum(stitched_results[window_key][12])])[0:4]
 
         lens = []
 

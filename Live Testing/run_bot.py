@@ -35,7 +35,7 @@ if __name__ == '__main__':
     risk = float(risk)
 
 
-    data = backtestData(pairs=pairs,frame=frame,dates=dates)
+    data = backtestData(pairs=pairs,frame=frame,resampled='4H',dates=dates)
     bot = PatternBot(pairs=pairs,risk=risk,peak_method=args.peak,custom=True if frame=='Custom' else False)
 
     t0 = time.time()

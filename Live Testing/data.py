@@ -257,7 +257,7 @@ class backtestResults(object):
 
 class backtestData(object):
 
-    def __init__(self,pairs,frame,dates=None):
+    def __init__(self,pairs,frame,resampled=False,dates=None):
         self.pairs = pairs
         self.frame = frame
         self.dates = dates
@@ -278,6 +278,10 @@ class backtestData(object):
             tmp = tmp[['open', 'high', 'low', 'close']]
 
             tmp = tmp.drop_duplicates(keep=False)
+
+            if resampled:
+
+                tmp = tmp.resample(resampled).agg({'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last'})
 
             hist_data_all.update({i:tmp})
 
